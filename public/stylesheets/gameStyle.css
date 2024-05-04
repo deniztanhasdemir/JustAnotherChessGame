@@ -1,0 +1,124 @@
+html,
+body{
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    font-family: Impact, Haettenschweiler, "Franklin Gothic Bold", Charcoal, "Helvetica Inserat", "Bitstream Vera Sans Bold", "Arial Black", "sans serif";
+    background-color: #454545;
+}
+div *{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+#timeDiv{
+    top: 200px;
+    left: 100px;
+    position: absolute;
+    float: left;
+    color: #fc03f8;
+    font-size: 30px;
+}
+
+#sideLabel{
+    color: #fc03f8;
+    text-align: center;
+    visibility: visible;
+}
+
+#impossibleCounter{
+    text-align: center;
+}
+
+#turn{
+    max-width: 541px;
+    max-height: 30px;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    float: left;
+    border-right: 5px;
+    border:1px solid rgba(0, 0, 0);
+    border-style: inset;
+    text-align: center;
+    background: #fc03f8;
+    transition: .85s linear;
+    margin: 10px;
+    font-size: 24px;
+    bottom: 25px;
+}
+.turnHeightlight {
+    background: #5cb85c;
+    color: #fff;
+}
+#game{
+    top: 100px;
+    max-width: 490px;
+    max-height: 504px;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    margin: 20px auto;
+}
+.chessCeller{
+    max-width: 50px;
+    max-height: 50px;
+    width: 100%;
+    height: 100%;
+    float: left;
+    color: #fc03f8;
+    /*margin: 3px;*/
+    padding: 15px 0 0 20px;
+}
+.chessSquare{
+    background-color: #fc03f8;
+    max-width: 50px;
+    max-height: 50px;
+    width: 100%;
+    height: 100%;
+    float: left;
+    /*margin: 3px;*/
+    border:1px solid rgba(0, 0, 0);
+    padding: 0 0 0 4px;
+    font-size: 30pt;
+    cursor: pointer;
+    z-index: 1;
+
+}
+.chessSquare:hover{
+    color: rgb(255, 255, 255);
+    background:rgb(0, 185, 10);
+    z-index: 2;
+    animation: neonBlueText 1.5s ease-in-out infinite alternate;
+}
+.brown {
+    background: #666; 
+}
+.blue {
+    background: blue;
+}
+
+.turnText{
+    text-align: center;
+    font-size: 24px;
+}
+
+.fullscreen{
+    margin: 0 auto; 
+    padding: 4px;
+    background-color: #fc03f8; 
+    font-family: inherit;
+    font-size: 20px;
+}
+
+#dummy{
+    visibility: hidden;
+}
+
+#wrap{
+    text-align: center;
+    position: relative;
+    top: 100px;
+}

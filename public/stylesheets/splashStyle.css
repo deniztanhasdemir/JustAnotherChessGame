@@ -1,0 +1,153 @@
+body{
+    background-color: #454545;
+}
+
+.gameTitle{
+    text-align: center;
+    font-family: Impact, Haettenschweiler, "Franklin Gothic Bold", Charcoal, "Helvetica Inserat", "Bitstream Vera Sans Bold", "Arial Black", "sans serif";
+    font-size: 55px;
+    color: #fc03f8;
+}
+
+.playDiv{
+    text-align: center;
+    position: relative;
+    top: 150px;
+    
+}
+
+#titleB::before{
+  content: "J";
+}
+
+#titleB::after{
+  content: "e";
+}
+
+#playLink{
+    background-color:#fc03f8;
+    position: relative;
+    color: black;
+    padding-left: 75px;
+    padding-right: 75px;
+    border-radius: 5px;
+    border: 2px solid black;
+    font-family: Impact, Haettenschweiler, "Franklin Gothic Bold", Charcoal, "Helvetica Inserat", "Bitstream Vera Sans Bold", "Arial Black", "sans serif";
+    font-size: 40px;
+    z-index: 3;
+    top:110px;
+}
+
+#playLink:hover{
+    color: #fc03f8;
+    background-color: black;
+}
+
+.playImg{
+    position: absolute;
+    z-index: 2;
+}
+
+.statistics{
+  position: relative;
+  font-size: 36px;
+  color: #fc03f8;
+  font-family: Impact, Haettenschweiler, "Franklin Gothic Bold", Charcoal, "Helvetica Inserat", "Bitstream Vera Sans Bold", "Arial Black", "sans serif";
+  text-align: center;
+  top: 350px;
+  transition: color 3s;
+}
+
+.statistics:active{
+  color: yellow;
+}
+
+.statPara{
+  position: relative;
+  font-size: 18px;
+  color: #fc03f8;
+  font-family: Impact, Haettenschweiler, "Franklin Gothic Bold", Charcoal, "Helvetica Inserat", "Bitstream Vera Sans Bold", "Arial Black", "sans serif";
+  text-align: center;
+  top: 350px;
+}
+
+.center {
+      
+    margin: 0 auto;
+    
+  }
+
+  .awesome {
+    
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-style: bold;
+    
+    width:100%;
+    
+    margin: 0 auto;
+    text-align: center;
+    
+    color:#313131;
+    font-size:60px;
+    font-weight: bold;
+
+    animation:colorchange 20s infinite alternate;
+    visibility: default;
+    
+  }
+
+  @keyframes colorchange {
+    0% {
+      
+      color: blue;
+    }
+    
+    10% {
+      
+      color: #8e44ad;
+    }
+    
+    20% {
+      
+      color: #1abc9c;
+    }
+    
+    30% {
+      
+      color: #d35400;
+    }
+    
+    40% {
+      
+      color: blue;
+    }
+    
+    50% {
+      
+      color: #34495e;
+    }
+    
+    60% {
+      
+      color: blue;
+    }
+    
+    70% {
+      
+      color: #2980b9;
+    }
+    80% {
+   
+      color: #f1c40f;
+    }
+    
+    90% {
+   
+      color: #2980b9;
+    }
+    
+    100% {
+      
+      color: pink;
+    }
+  }

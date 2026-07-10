@@ -98,7 +98,7 @@
           <span class="pc-name" id="oppName">Waiting for opponent…</span>
           <span class="pc-side" id="oppSide"></span>
         </div>
-        <div class="tray" id="oppTray" aria-label="Pieces you captured"></div>
+        <div class="tray" id="oppTray" aria-label="Pieces your opponent captured"></div>
       </div>
 
       <div class="clock-row">
@@ -119,7 +119,7 @@
           <span class="pc-name" id="youName">You</span>
           <span class="pc-side" id="youSide"></span>
         </div>
-        <div class="tray" id="youTray" aria-label="Pieces your opponent captured"></div>
+        <div class="tray" id="youTray" aria-label="Pieces you captured"></div>
       </div>
 
       <div class="actions">
@@ -150,18 +150,8 @@
 
   <span id="dummy" class="visually-hidden"></span>
 
-  <script>
-    // Play a short sound effect unless the player muted sound.
-    function playSound(soundfile) {
-      try {
-        if (window.__muted) return;
-        var a = new Audio(soundfile);
-        a.volume = 0.5;
-        a.play().catch(function () {});
-      } catch (e) {}
-    }
-  </script>
   <script src="/javascripts/jquery.min.js"></script>
+  <script src="/javascripts/sound.js"></script>
   <script src="/javascripts/app.js"></script>
   <script src="/javascripts/time.js"></script>
   <script src="/javascripts/net.js"></script>

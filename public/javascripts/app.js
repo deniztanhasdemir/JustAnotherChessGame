@@ -694,7 +694,11 @@ let main = {
       }
       main.variables.pieces[selectedpiece].position = target.id;
       main.variables.pieces[selectedpiece].moved = true;
-      toBeCaptured.captured = true;
+      if (main.variables.pieces[toBeCaptured]) {
+        main.variables.pieces[toBeCaptured].captured = true;
+        main.variables.pieces[toBeCaptured].position = null;
+      }
+      main.methods.maybePromote(selectedpiece, target.id);
     },
 
     //Moving
@@ -717,6 +721,16 @@ let main = {
       }
       main.variables.pieces[selectedpiece].position = target.id;
       main.variables.pieces[selectedpiece].moved = true;
+      main.methods.maybePromote(selectedpiece, target.id);
+    },
+
+    // Auto-promote a pawn that reaches the far rank to a queen.
+    maybePromote: function (pieceKey, squareId) {
+      var pc = main.variables.pieces[pieceKey];
+      if (!pc) return;
+      var rank = parseInt(String(squareId).split('_')[1], 10);
+      if (pc.type === 'whitePawn' && rank === 8) { pc.type = 'whiteQueen'; pc.img = '&#9813;'; $('#' + squareId).html(pc.img); }
+      else if (pc.type === 'blackPawn' && rank === 1) { pc.type = 'blackQueen'; pc.img = '&#9819;'; $('#' + squareId).html(pc.img); }
     },
 
     //What happens at the end of the turn
@@ -793,7 +807,7 @@ let main = {
       main.variables.highlighted.length = 0;
       var result = false;
       for (let gamepiece in main.variables.pieces){
-        //console.log("This happens");
+        if(main.variables.pieces[gamepiece].captured) continue;
         if(main.variables.pieces[gamepiece].type.slice(0,1) == 'w'){
           main.methods.moveoptions(gamepiece);
         }
@@ -812,7 +826,7 @@ let main = {
       main.variables.highlighted.length = 0;
       var result = false;
       for (let gamepiece in main.variables.pieces){
-        //console.log("This happens");
+        if(main.variables.pieces[gamepiece].captured) continue;
         if(main.variables.pieces[gamepiece].type.slice(0,1) == 'b'){
           main.methods.moveoptions(gamepiece);
         }

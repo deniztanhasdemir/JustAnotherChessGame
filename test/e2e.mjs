@@ -68,7 +68,7 @@ const rA = await untilType(alice, "rematch_start");
 const rB = await untilType(bob, "rematch_start");
 ok(rA.side === 1 && rB.side === 0, "colors swap on rematch");
 bob.close();
-ok(!!(await untilType(alice, "opponent_left")), "remaining player notified when opponent leaves");
+ok(!!(await untilType(alice, "opponent_disconnected")), "remaining player sees the opponent drop (grace window)");
 alice.close();
 
 log(`\n==== RESULT: ${pass} passed, ${fail} failed ====`);

@@ -1,32 +1,30 @@
 var seconds = 0;
 var minutes = 0;
+var timerId = null;
 
-function timer(){
-    setInterval(() => {
+function renderClock() {
+  var el = document.getElementById("timeDiv");
+  if (!el) return;
+  var mm = (minutes < 10 ? "0" : "") + minutes;
+  var ss = (seconds < 10 ? "0" : "") + seconds;
+  el.innerHTML = mm + "." + ss;
+}
 
-        var timer = document.getElementById("timeDiv");
-        seconds++;
-        if(seconds >= 60){
-            seconds = 0;
-            minutes++;
-        }
+function timer() {
+  if (timerId) return; // already running
+  timerId = setInterval(function () {
+    seconds++;
+    if (seconds >= 60) { seconds = 0; minutes++; }
+    renderClock();
+  }, 1000);
+}
 
-        if(seconds < 10){
-            if(minutes < 10){
-                timer.innerHTML = `0${minutes}.0${seconds}`;
-            }
-            else{
-                timer.innerHTML = `${minutes}.0${seconds}`;
-            }
-        }
-        else{
-            if(minutes < 10){
-                timer.innerHTML = `0${minutes}.${seconds}`;
-            }
-            else{
-                timer.innerHTML = `${minutes}.${seconds}`;
-            }
-        }
+function stopTimer() {
+  if (timerId) { clearInterval(timerId); timerId = null; }
+}
 
-    }, 1000)
+function resetTimer() {
+  seconds = 0;
+  minutes = 0;
+  renderClock();
 }

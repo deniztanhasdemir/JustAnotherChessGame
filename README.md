@@ -44,6 +44,16 @@ npm run dev     # start a local server (usually http://localhost:8787)
 
 Open the local URL in two tabs to play both sides.
 
+### Tests
+
+The multiplayer server has automated tests (they drive real WebSocket clients
+against the local server). With `npm run dev` running in one terminal:
+
+```bash
+npm run test:e2e       # routing, matchmaking, move relay, forfeit, game isolation
+npm run test:regress   # regression tests for player-id reuse & post-game forfeit
+```
+
 ## Deploying
 
 Pushing to `main` triggers a Cloudflare build that runs `npx wrangler deploy`

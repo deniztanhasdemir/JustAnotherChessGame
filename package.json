@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test:e2e": "node test/e2e.mjs",
+    "test:regress": "node test/regress.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.110.0"

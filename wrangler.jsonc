@@ -21,6 +21,7 @@
   // SQLite-backed Durable Objects (required on the Workers Free plan).
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["GameHub"] },
-    { "tag": "v2", "deleted_classes": ["GameHub"], "new_sqlite_classes": ["GameRoom", "Matchmaker"] }
+    { "tag": "v2", "new_sqlite_classes": ["GameRoom", "Matchmaker"] },
+    { "tag": "v3", "deleted_classes": ["GameHub"] }
   ]
 }

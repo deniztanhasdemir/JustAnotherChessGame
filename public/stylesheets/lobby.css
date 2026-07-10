@@ -65,6 +65,19 @@
   padding: 12px 14px;
 }
 
+.tc-picker { display: flex; flex-direction: column; gap: 8px; }
+.tc-picker .eyebrow { padding-left: 2px; }
+.tc-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.tc-chip {
+  font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+  background: var(--void-2); border: 1px solid var(--line-2); border-radius: 8px;
+  padding: 9px 4px; cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.tc-chip:hover { border-color: var(--pink); color: var(--text); }
+.tc-chip.active { border-color: var(--pink); background: var(--pink); color: #12030f; box-shadow: var(--glow-s); }
+@media (max-width: 400px) { .tc-chips { grid-template-columns: repeat(2, 1fr); } }
+
 .hint { margin: 0; font-size: 13px; color: var(--muted); text-align: center; }
 .err { margin: 2px 0 0; font-size: 13px; color: var(--bad); text-align: center; font-family: var(--font-mono); }
 

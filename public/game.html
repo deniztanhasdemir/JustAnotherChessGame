@@ -101,13 +101,9 @@
         <div class="pc-top">
           <span class="pc-name" id="oppName">Waiting for opponent…</span>
           <span class="pc-side" id="oppSide"></span>
+          <span class="pc-clock" id="oppClock">--:--</span>
         </div>
         <div class="tray" id="oppTray" aria-label="Pieces your opponent captured"></div>
-      </div>
-
-      <div class="clock-row">
-        <span class="eyebrow">Elapsed</span>
-        <span id="timeDiv" class="clock">00.00</span>
       </div>
 
       <div class="moves panel">
@@ -123,6 +119,7 @@
         <div class="pc-top">
           <span class="pc-name" id="youName">You</span>
           <span class="pc-side" id="youSide"></span>
+          <span class="pc-clock" id="youClock">--:--</span>
         </div>
         <div class="tray" id="youTray" aria-label="Pieces you captured"></div>
       </div>
@@ -158,7 +155,6 @@
   <script src="/javascripts/jquery.min.js"></script>
   <script src="/javascripts/sound.js"></script>
   <script src="/javascripts/app.js"></script>
-  <script src="/javascripts/time.js"></script>
   <script src="/javascripts/net.js"></script>
 </body>
 </html>

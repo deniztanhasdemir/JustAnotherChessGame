@@ -9,8 +9,8 @@
     conn: $("conn"), connText: $("connText"),
     codeLabel: $("codeLabel"), copyInvite: $("copyInvite"),
     turn: $("turn"), board: $("board"), ranks: $("ranks"), files: $("files"),
-    oppName: $("oppName"), oppSide: $("oppSide"), oppTray: $("oppTray"),
-    youName: $("youName"), youSide: $("youSide"), youTray: $("youTray"),
+    oppName: $("oppName"), oppSide: $("oppSide"), oppTray: $("oppTray"), oppClock: $("oppClock"),
+    youName: $("youName"), youSide: $("youSide"), youTray: $("youTray"), youClock: $("youClock"),
     moveList: $("moveList"), impossible: $("impossibleCounter"), copyPgn: $("copyPgn"),
     resign: $("resignBtn"), sound: $("soundBtn"),
     overlay: $("overlay"), ovTitle: $("ovTitle"), ovMsg: $("ovMsg"),
@@ -161,25 +161,61 @@
     buildCoords(flipped);
   }
 
-  function startClock() {
-    if (typeof window.resetTimer === "function") window.resetTimer();
-    if (typeof window.timer === "function") window.timer();
+  // ---- clocks (the Durable Object is authoritative; we just display + tick locally) ----
+  var clock = { tc: 0, spent: { 0: 0, 1: 0 }, active: 0, running: false, syncAt: 0 };
+  var clockTimer = null;
+  function onClock(m) {
+    if (m.tc != null) clock.tc = m.tc;
+    if (m.spent) clock.spent = m.spent;
+    if (m.active != null) clock.active = m.active;
+    clock.running = !!m.running;
+    clock.syncAt = Date.now();
+    renderClocks();
+    if (clock.running && !clockTimer) clockTimer = setInterval(renderClocks, 250);
+    if (!clock.running && clockTimer) { clearInterval(clockTimer); clockTimer = null; }
   }
-  function stopClock() { if (typeof window.stopTimer === "function") window.stopTimer(); }
+  function liveSpent(side) {
+    var s = clock.spent[side] || 0;
+    if (clock.running && clock.active === side) s += Date.now() - clock.syncAt;
+    return s;
+  }
+  function fmtClock(ms) {
+    if (ms < 0) ms = 0;
+    var t = Math.ceil(ms / 1000), mm = Math.floor(t / 60), ss = t % 60;
+    return (mm < 10 ? "0" : "") + mm + ":" + (ss < 10 ? "0" : "") + ss;
+  }
+  function renderClocks() {
+    for (var side = 0; side < 2; side++) {
+      var el = side === mySide ? els.youClock : els.oppClock;
+      if (!el) continue;
+      var spent = liveSpent(side);
+      var timed = clock.tc > 0;
+      el.textContent = timed ? fmtClock(clock.tc * 1000 - spent) : fmtClock(spent);
+      var isActive = clock.running && clock.active === side && !over;
+      el.classList.toggle("active", isActive);
+      el.classList.toggle("low", timed && isActive && clock.tc * 1000 - spent < 10000);
+      el.classList.toggle("untimed", !timed);
+    }
+  }
+  function stopClockLocal() {
+    clock.running = false;
+    if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }
+    renderClocks();
+  }
 
   function resetBoardUI() {
     els.moveList.innerHTML = ""; els.youTray.innerHTML = ""; els.oppTray.innerHTML = "";
     sanMoves = []; resultG = "*";
   }
 
-  function beginGame(whiteName, blackName) {
+  function beginGame(m) {
     started = true; over = false;
     hideOverlay();
     resetBoardUI();
-    setCards(whiteName, blackName);
+    setCards(m.white, m.black);
     applyFlip();
     window.Engine.reset(mySide);
-    startClock();
+    onClock(m);
     turnChanged();
     els.resign.disabled = false; resetResign();
     setConn("on", "Live");
@@ -196,7 +232,7 @@
     (msg.moves || []).forEach(function (mv) {
       if (validMove(mv)) window.Engine.applyMove(mv.kind, mv.piece, mv.to);
     });
-    startClock();
+    onClock(msg);
     turnChanged();
     els.resign.disabled = false; resetResign();
     setConn("on", "Live");
@@ -236,7 +272,10 @@
 
   function connect() {
     var proto = location.protocol === "https:" ? "wss://" : "ws://";
-    var url = proto + location.host + "/ws?g=" + encodeURIComponent(code) + "&name=" + encodeURIComponent(myName);
+    var tc = "0";
+    try { tc = localStorage.getItem("jacg-tc") || "0"; } catch (e) {}
+    var url = proto + location.host + "/ws?g=" + encodeURIComponent(code) +
+      "&name=" + encodeURIComponent(myName) + "&tc=" + encodeURIComponent(tc);
     setConn("wait", reconnecting ? "Reconnecting…" : "Connecting");
     ws = new WebSocket(url);
     ws.addEventListener("open", function () { attempts = 0; reconnecting = false; setConn("on", "Connected"); });
@@ -268,6 +307,7 @@
         break;
       case "waiting":
         setConn("wait", "Waiting");
+        onClock(m);
         if (!started) {
           els.turn.className = "turn-banner opp";
           els.turn.textContent = "Waiting for opponent";
@@ -276,13 +316,16 @@
         }
         break;
       case "ready":
-        beginGame(m.white, m.black);
+        beginGame(m);
         break;
       case "resume":
         resumeGame(m);
         break;
       case "move":
         if (validMove(m)) window.Engine.applyMove(m.kind, m.piece, m.to);
+        break;
+      case "clock":
+        onClock(m);
         break;
       case "gameover":
         endGame(m.reason, m.winner === mySide, m.winner);
@@ -300,7 +343,7 @@
       case "opponent_left":
         if (over) break;
         over = true; started = false;
-        stopClock(); window.Engine.stop();
+        stopClockLocal(); window.Engine.stop();
         resultG = mySide === 0 ? "1-0" : "0-1";
         els.turn.className = "turn-banner win"; els.turn.textContent = "You win";
         els.resign.disabled = true;
@@ -330,7 +373,7 @@
 
   function endGame(reason, iWon, winner) {
     over = true; started = false;
-    stopClock(); window.Engine.stop();
+    stopClockLocal(); window.Engine.stop();
     els.resign.disabled = true; resetResign();
     resultG = winner === 0 ? "1-0" : "0-1";
     els.turn.className = "turn-banner " + (iWon ? "win" : "lose");

@@ -24,6 +24,16 @@
         <input id="name" class="field field-name" maxlength="16" placeholder="PLAYER" autocomplete="off">
       </label>
 
+      <div class="tc-picker">
+        <span class="eyebrow">Time control</span>
+        <div class="tc-chips" id="tcChips">
+          <button type="button" class="tc-chip" data-tc="0">Unlimited</button>
+          <button type="button" class="tc-chip" data-tc="180">3 min</button>
+          <button type="button" class="tc-chip" data-tc="300">5 min</button>
+          <button type="button" class="tc-chip" data-tc="600">10 min</button>
+        </div>
+      </div>
+
       <button id="quick" class="btn btn-primary btn-lg btn-block">&#9654;&nbsp; Quick Play</button>
       <p class="hint" id="quick-hint">Get matched with the next player looking for a game.</p>
 

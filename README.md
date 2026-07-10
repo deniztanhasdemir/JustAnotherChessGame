@@ -14,8 +14,11 @@ The game runs on **Cloudflare Workers**. From the lobby you can:
 The first player in a game plays white, the second plays black. To try it solo,
 open the invite link (or the same `/game/<code>` URL) in a second browser tab.
 
-Along the way you get a live connection indicator, a turn banner, move history,
-captured pieces, resign, and rematch (with colors swapped).
+Pick a time control (unlimited, 3 / 5 / 10 min) in the lobby. Along the way you
+get per-player chess clocks, a live connection indicator, last-move and in-check
+highlighting, board coordinates, a SAN move list with Copy-PGN, captured pieces,
+sound effects, resign, and rematch (with colors swapped). If you refresh or drop
+briefly, the game holds for ~20s and restores your board and clock when you're back.
 
 > The live URL is in the Cloudflare dashboard under
 > **Workers & Pages → justanotherchessgame** — it looks like

@@ -20,8 +20,7 @@ jobs:
       - name: Syntax check client scripts
         run: |
           for f in public/javascripts/app.js public/javascripts/net.js \
-                   public/javascripts/lobby.js public/javascripts/sound.js \
-                   public/javascripts/time.js; do
+                   public/javascripts/lobby.js public/javascripts/sound.js; do
             node --check "$f"
           done
 

@@ -121,7 +121,18 @@
 }
 .player-card.you { border-color: color-mix(in srgb, var(--pink) 40%, var(--line)); }
 .pc-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.pc-name { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-name { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+.pc-clock {
+  font-family: var(--font-mono); font-size: 20px; font-variant-numeric: tabular-nums;
+  color: var(--muted); min-width: 60px; text-align: right; letter-spacing: .01em;
+}
+.pc-clock.active { color: var(--pink-2); text-shadow: var(--glow-s); }
+.pc-clock.low { color: var(--bad); text-shadow: 0 0 8px rgba(255,85,115,.45); }
+.pc-clock.untimed { font-size: 15px; color: var(--muted); text-shadow: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .pc-clock.low { animation: lowpulse .9s ease-in-out infinite; }
+  @keyframes lowpulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+}
 .pc-side {
   font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
   color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 2px 9px; white-space: nowrap;

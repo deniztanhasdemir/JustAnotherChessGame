@@ -14,6 +14,22 @@
   if (saved) nameEl.value = saved;
   else nameEl.placeholder = "PLAYER-" + Math.floor(1000 + Math.random() * 9000);
 
+  // Time-control chips (persisted, sent to the room on connect).
+  var tcChips = document.getElementById("tcChips");
+  var savedTc = "300";
+  try { savedTc = localStorage.getItem("jacg-tc") || "300"; } catch (e) {}
+  function setTc(v) {
+    try { localStorage.setItem("jacg-tc", v); } catch (e) {}
+    Array.prototype.forEach.call(tcChips.querySelectorAll(".tc-chip"), function (c) {
+      c.classList.toggle("active", c.getAttribute("data-tc") === v);
+    });
+  }
+  tcChips.addEventListener("click", function (e) {
+    var chip = e.target.closest ? e.target.closest(".tc-chip") : null;
+    if (chip) setTc(chip.getAttribute("data-tc"));
+  });
+  setTc(savedTc);
+
   function saveName() {
     var v = nameEl.value.trim() || nameEl.placeholder;
     try { localStorage.setItem("jacg-name", v); } catch (e) {}

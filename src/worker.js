@@ -62,28 +62,28 @@ export class GameHub {
   constructor(ctx, env) {
     this.ctx = ctx;
     this.env = env;
+    // Monotonic player-id counter, restored from storage so ids are NEVER reused.
+    // (Reusing a freed id could alias a departed player's stale `partner` pointer
+    // onto an unrelated future player, causing cross-game FORFEIT/move bleed.)
+    this.nextPid = 1;
+    ctx.blockConcurrencyWhile(async () => {
+      this.nextPid = (await ctx.storage.get("nextPid")) ?? 1;
+    });
   }
 
   async fetch(request) {
     const { 0: client, 1: server } = new WebSocketPair();
     this.ctx.acceptWebSocket(server);
 
-    const sockets = this.ctx.getWebSockets();
+    const pid = this.#allocatePid();
 
-    // Assign a player id that is unique among the currently connected players.
-    let maxPid = 0;
-    for (const s of sockets) {
-      const a = s.deserializeAttachment();
-      if (a && a.pid > maxPid) maxPid = a.pid;
-    }
-    const pid = maxPid + 1;
-
-    // Find a player already waiting for an opponent.
+    // Find a player still waiting for an opponent (side -1 == waiting; a finished
+    // or forfeited player keeps its 0/1 side and so is never re-matched here).
     let waiting = null;
-    for (const s of sockets) {
+    for (const s of this.ctx.getWebSockets()) {
       if (s === server) continue;
       const a = s.deserializeAttachment();
-      if (a && a.partner == null) {
+      if (a && a.side === -1) {
         waiting = s;
         break;
       }
@@ -112,6 +112,12 @@ export class GameHub {
     if (!relayed) return;
     const partner = this.#partnerOf(ws);
     if (partner) this.#safeSend(partner, relayed);
+    // Checkmate / third-impossible ends the game. Sever the pairing so a later
+    // tab-close can't deliver a spurious FORFEIT that flips the decided result.
+    if (relayed === "OPPOSITE_CHECKMATE" || relayed === "OPPOSITE_IMPOSSIBLE") {
+      this.#detach(ws);
+      this.#detach(partner);
+    }
   }
 
   async webSocketClose(ws) {
@@ -122,10 +128,30 @@ export class GameHub {
     this.#forfeit(ws);
   }
 
-  // Tell the opponent the other side left (original server behaviour).
+  // Tell the opponent the other side left, then sever the pairing so the now-lone
+  // survivor can't later route a stale FORFEIT to an unrelated future player.
   #forfeit(ws) {
     const partner = this.#partnerOf(ws);
-    if (partner) this.#safeSend(partner, "FORFEIT");
+    if (!partner) return;
+    this.#safeSend(partner, "FORFEIT");
+    this.#detach(partner);
+  }
+
+  // Hand out a player id that is never reused (persisted via the DO output gate).
+  #allocatePid() {
+    const pid = this.nextPid++;
+    this.ctx.storage.put("nextPid", this.nextPid);
+    return pid;
+  }
+
+  // Clear a socket's partner pointer so it routes nowhere once its game is over.
+  #detach(ws) {
+    if (!ws) return;
+    const a = ws.deserializeAttachment();
+    if (a && a.partner != null) {
+      a.partner = null;
+      ws.serializeAttachment(a);
+    }
   }
 
   #partnerOf(ws) {

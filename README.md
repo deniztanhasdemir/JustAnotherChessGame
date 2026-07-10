@@ -2,16 +2,57 @@
 
 ## What's this?
 
-It's just another chess game called Just Another Chess Game. It is partially a multiplayer game. (You should be able to play with another person on the same network, though we almost always open another browser tab)
+It's just another chess game called Just Another Chess Game. It's a two-player
+online chess game: two people connect, get matched, and play against each other
+in real time (we almost always just open a second browser tab to test it).
 
-## How to setup and play
+## How to play
 
-The server setup requires Node.js, so you will need to download that first [here](https://nodejs.org/en/download/)
+The game is deployed on **Cloudflare Workers**. Open the site, click **Play**, and
+you'll be put into a match as soon as a second player clicks Play too. To try it
+solo, open the game in two browser tabs — the first tab plays white, the second
+plays black.
 
-First, download the repository. Open the command line and navigate to the game folder. There, enter `npm install`. This will get the packages required the get the server running. After the installation is complete, from the same command line enter `npm start`, which will start the server and give you the number of the port it is listening to (this is usually 3000). At this point, the server is up and running, where you can play virtually an infinite amount of chess games simultaneously.
+> The live URL is shown in the Cloudflare dashboard under
+> **Workers & Pages → justanotherchessgame** (it looks like
+> `https://justanotherchessgame.<your-subdomain>.workers.dev`).
 
-After setting up the server, you can open a browser and type in localhost:PORT_NUMBER (so for port number 3000, enter localhost:3000). The game will only start after another person also searches for a match, which you can simulate by opening another tab in your browser and entering the same localhost.
+## How it's built
+
+- **Front end** (`public/`) — the board, pieces, move rules and UI. Plain
+  HTML/CSS/JS with jQuery. Served straight from Cloudflare's static assets.
+- **Multiplayer server** (`src/worker.js`) — a Cloudflare Worker that serves the
+  site and hands the `/ws` WebSocket endpoint to a **Durable Object** (`GameHub`).
+  The Durable Object does matchmaking (pairs two players, first = white, second =
+  black) and relays each move to the opponent. It uses the WebSocket Hibernation
+  API, so it costs nothing while players are idle between moves.
+- **Config** (`wrangler.jsonc`) — wires the static assets binding and the Durable
+  Object together.
+
+> The original version (`server.js`, `bin/`, `views/`) was a Node.js + Express +
+> `ws` server. It's kept in the repo for reference but is no longer used — the
+> Cloudflare Worker replaces it.
+
+## Local development
+
+Requires [Node.js](https://nodejs.org/en/download/).
+
+```bash
+npm install     # install wrangler
+npm run dev     # start a local server (usually http://localhost:8787)
+```
+
+Open the local URL in two tabs to play both sides.
+
+## Deploying
+
+Pushing to `main` triggers a Cloudflare build that runs `npx wrangler deploy`
+automatically. To deploy manually from your machine (after `npx wrangler login`):
+
+```bash
+npm run deploy
+```
 
 ## Credits
 
-Deniz Tan Hasdemir & Can Sağtürk 
+Deniz Tan Hasdemir & Can Sağtürk

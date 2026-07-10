@@ -71,6 +71,12 @@
 .files { grid-column: 2; grid-row: 2; display: flex; justify-content: space-around; padding: 0 10px; }
 .ranks span, .files span { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: center; line-height: 1; }
 
+/* 3D stage (Three.js) — swapped in for the 2D board via .mode-3d */
+.stage3d { display: none; width: clamp(300px, 72vmin, 540px); height: clamp(300px, 72vmin, 540px); touch-action: none; }
+.stage3d canvas { display: block; border-radius: 14px; }
+.board-col.mode-3d .board-frame { display: none; }
+.board-col.mode-3d .stage3d { display: block; }
+
 .chessSquare {
   position: relative;
   display: flex; align-items: center; justify-content: center;

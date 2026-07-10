@@ -11,6 +11,7 @@
   <div class="topbar">
     <a class="brand wordmark" href="/">JACG</a>
     <div class="topbar-right">
+      <button id="viewToggle" class="chip" type="button" title="Switch between 2D and 3D board" hidden>2D</button>
       <button id="copyInvite" class="chip" type="button" title="Copy the invite link">
         <span class="chip-k">CODE</span><b id="codeLabel">·····</b><span class="chip-ico">&#10697;</span>
       </button>
@@ -93,6 +94,7 @@
         </div>
         <div class="files" id="files" aria-hidden="true"></div>
       </div>
+      <div class="stage3d" id="stage3d"></div>
       <p id="sideLabel" class="side-label"></p>
     </section>
 
@@ -156,5 +158,6 @@
   <script src="/javascripts/sound.js"></script>
   <script src="/javascripts/app.js"></script>
   <script src="/javascripts/net.js"></script>
+  <script type="module" src="/javascripts/board3d.js"></script>
 </body>
 </html>

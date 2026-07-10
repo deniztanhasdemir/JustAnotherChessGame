@@ -159,6 +159,7 @@
     var flipped = mySide === 1;
     els.board.classList.toggle("flip", flipped);
     buildCoords(flipped);
+    if (window.Board3D) window.Board3D.setSide(mySide);
   }
 
   // ---- clocks (the Durable Object is authoritative; we just display + tick locally) ----

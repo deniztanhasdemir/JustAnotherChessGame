@@ -33,7 +33,7 @@ window.Engine = {
     main.variables.selectedpiece = piece;
     var faker = { id: to };
     if (kind === "capture") { main.methods.capture(faker, piece); main.methods.endturn(); }
-    else if (kind === "castle") { main.methods.move(faker, piece); main.methods.fakeEndTurn(); }
+    else if (kind === "castle") { window.__suppressRecord = true; main.methods.move(faker, piece); window.__suppressRecord = false; main.methods.fakeEndTurn(); }
     else { main.methods.move(faker, piece); main.methods.endturn(); }
   },
   // Freeze play and clear highlights when a game ends.
@@ -48,7 +48,7 @@ window.Engine = {
     main.variables.turn = "w";
     main.variables.selectedpiece = "";
     main.variables.highlighted.length = 0;
-    $(".chessSquare").removeClass("blue").html("").attr("chess", "null");
+    $(".chessSquare").removeClass("blue lastmove incheck sel").html("").attr("chess", "null");
     main.methods.gamesetup();
     var ic = document.getElementById("impossibleCounter");
     if (ic) ic.innerHTML = "Impossible Moves: 0";
@@ -681,6 +681,8 @@ let main = {
       //to be captured piece
       var toBeCaptured = $('#' + target.id).attr('chess');
       if (window.GameUI) GameUI.record(selectedpiece, main.variables.pieces[selectedpiece].position, target.id, toBeCaptured);
+      main.methods.markLastMove(main.variables.pieces[selectedpiece].position, target.id);
+      if (window.Sfx) Sfx.capture();
 
       $('#' + target.id).html(main.variables.pieces[selectedpiece].img);
       $('#' + target.id).attr('chess', selectedpiece);
@@ -708,6 +710,8 @@ let main = {
         selectedpiece = servergiven;
       }
       if (window.GameUI) GameUI.record(selectedpiece, main.variables.pieces[selectedpiece].position, target.id, null);
+      main.methods.markLastMove(main.variables.pieces[selectedpiece].position, target.id);
+      if (window.Sfx) Sfx.move();
 
       $('#' + target.id).html(main.variables.pieces[selectedpiece].img);
       $('#' + target.id).attr('chess', selectedpiece);
@@ -731,6 +735,24 @@ let main = {
       var rank = parseInt(String(squareId).split('_')[1], 10);
       if (pc.type === 'whitePawn' && rank === 8) { pc.type = 'whiteQueen'; pc.img = '&#9813;'; $('#' + squareId).html(pc.img); }
       else if (pc.type === 'blackPawn' && rank === 1) { pc.type = 'blackQueen'; pc.img = '&#9819;'; $('#' + squareId).html(pc.img); }
+    },
+
+    // Highlight the two squares of the most recent move.
+    markLastMove: function (from, to) {
+      $('.chessSquare').removeClass('lastmove');
+      if (from) $('#' + from).addClass('lastmove');
+      if (to) $('#' + to).addClass('lastmove');
+    },
+
+    // Mark the side-to-move's king if it is in check, and play a cue.
+    updateCheckHighlight: function () {
+      $('.chessSquare').removeClass('incheck');
+      var side = main.variables.turn === 'w' ? 0 : 1;
+      if (main.methods.checkKingThreatened(side)) {
+        var kingKey = side === 0 ? 'whiteKing' : 'blackKing';
+        var pos = main.variables.pieces[kingKey].position;
+        if (pos) { $('#' + pos).addClass('incheck'); if (window.Sfx) Sfx.check(); }
+      }
     },
 
     //What happens at the end of the turn
@@ -786,6 +808,8 @@ let main = {
         }
       }
       if (window.GameUI) GameUI.turnChanged();
+      $('.chessSquare').removeClass('sel');
+      main.methods.updateCheckHighlight();
       //console.log("Turn ended");
     },
 
@@ -960,6 +984,7 @@ window.main = main; // expose the engine state to net.js
         };
         if (main.variables.selectedpiece == '' && target.name.slice(0,1) == main.variables.turn) { // show options
           main.variables.selectedpiece = e.target.id;
+          $('.chessSquare').removeClass('sel'); $('#' + e.target.id).addClass('sel');
           main.methods.moveoptions($(this).attr('chess'));
         } else if (main.variables.selectedpiece !='' && target.name == 'null') { // move selected piece
           if (selectedpiece.name == 'whiteKing' || selectedpiece.name == 'blackKing'){   
@@ -1128,6 +1153,7 @@ window.main = main; // expose the engine state to net.js
           main.methods.togglehighlight(main.variables.highlighted);
           main.variables.highlighted.length = 0;
           main.variables.selectedpiece = target.id;
+          $('.chessSquare').removeClass('sel'); $('#' + target.id).addClass('sel');
           main.methods.moveoptions(target.name);
         }
       }

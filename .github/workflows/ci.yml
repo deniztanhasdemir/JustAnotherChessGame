@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # global WebSocket + fetch for the e2e test
+
+      - run: npm ci
+
+      - name: Syntax check client scripts
+        run: |
+          for f in public/javascripts/app.js public/javascripts/net.js \
+                   public/javascripts/lobby.js public/javascripts/sound.js \
+                   public/javascripts/time.js; do
+            node --check "$f"
+          done
+
+      - name: Build check (wrangler dry-run)
+        run: npx wrangler deploy --dry-run
+
+      - name: WebSocket protocol e2e
+        run: |
+          npx wrangler dev --port 8787 --ip 127.0.0.1 &
+          WPID=$!
+          for i in $(seq 1 40); do
+            curl -sf http://127.0.0.1:8787/ >/dev/null 2>&1 && break
+            sleep 2
+          done
+          node test/e2e.mjs
+          RESULT=$?
+          kill $WPID 2>/dev/null || true
+          exit $RESULT

@@ -8,10 +8,10 @@
   var els = {
     conn: $("conn"), connText: $("connText"),
     codeLabel: $("codeLabel"), copyInvite: $("copyInvite"),
-    turn: $("turn"), board: $("board"),
+    turn: $("turn"), board: $("board"), ranks: $("ranks"), files: $("files"),
     oppName: $("oppName"), oppSide: $("oppSide"), oppTray: $("oppTray"),
     youName: $("youName"), youSide: $("youSide"), youTray: $("youTray"),
-    moveList: $("moveList"), impossible: $("impossibleCounter"),
+    moveList: $("moveList"), impossible: $("impossibleCounter"), copyPgn: $("copyPgn"),
     resign: $("resignBtn"), sound: $("soundBtn"),
     overlay: $("overlay"), ovTitle: $("ovTitle"), ovMsg: $("ovMsg"),
     ovInvite: $("ovInvite"), ovCode: $("ovCode"), ovCopy: $("ovCopy"),
@@ -25,14 +25,15 @@
   var mySide = null;
   var started = false;
   var over = false;
-  var rejected = false;      // room full / bad link — do not reconnect
+  var rejected = false;
   var reconnecting = false;
   var attempts = 0;
   var MAX_ATTEMPTS = 6;
-  var moveNo = 0;
   var resignArmed = false;
 
-  // ---- validation of anything arriving from the network ----
+  var sanMoves = [];          // SAN-ish tokens, for the move list + PGN
+  var whiteNameG = "White", blackNameG = "Black", resultG = "*";
+
   var SQ = /^[1-8]_[1-8]$/;
   var PIECE = /^(white|black)(King|Queen|Bishop|Knight|Rook|Pawn)[1-8]?$/;
   function validMove(m) {
@@ -47,28 +48,58 @@
 
   function setConn(state, text) { els.conn.className = "pill " + state; els.connText.textContent = text; }
 
-  // ---- turn banner (called by the engine after every move) ----
+  // ---- coordinate labels (flip with the board) ----
+  function buildCoords(flipped) {
+    var ranks = flipped ? [1, 2, 3, 4, 5, 6, 7, 8] : [8, 7, 6, 5, 4, 3, 2, 1];
+    var files = flipped ? ["h", "g", "f", "e", "d", "c", "b", "a"] : ["a", "b", "c", "d", "e", "f", "g", "h"];
+    if (els.ranks) els.ranks.innerHTML = ranks.map(function (n) { return "<span>" + n + "</span>"; }).join("");
+    if (els.files) els.files.innerHTML = files.map(function (c) { return "<span>" + c + "</span>"; }).join("");
+  }
+
+  // ---- turn banner ----
   function turnChanged() {
     if (over || !started) return;
     if (window.canPlay) { els.turn.className = "turn-banner you"; els.turn.textContent = "Your move"; }
     else { els.turn.className = "turn-banner opp"; els.turn.textContent = "Opponent's move"; }
   }
 
-  // ---- move history + captured trays (called by the engine's move/capture) ----
+  // ---- SAN move list + captured trays (called by the engine's move/capture) ----
+  function pieceLetter(k) {
+    if (/King/.test(k)) return "K";
+    if (/Queen/.test(k)) return "Q";
+    if (/Rook/.test(k)) return "R";
+    if (/Bishop/.test(k)) return "B";
+    if (/Knight/.test(k)) return "N";
+    return "";
+  }
+  function toSan(mover, from, to, isCapture) {
+    var ff = +String(from).split("_")[0], tf = +String(to).split("_")[0];
+    if (/King/.test(mover) && Math.abs(tf - ff) === 2) return "O-O";
+    if (/King/.test(mover) && Math.abs(tf - ff) === 3) return "O-O-O";
+    var letter = pieceLetter(mover);
+    var cap = isCapture ? ((letter === "" ? FILES[ff] : "") + "x") : "";
+    return letter + cap + algebraic(to);
+  }
+  function renderMoves() {
+    els.moveList.innerHTML = "";
+    for (var i = 0; i < sanMoves.length; i += 2) {
+      var li = document.createElement("li");
+      var n = document.createElement("span"); n.className = "n"; n.textContent = (i / 2 + 1) + ".";
+      var w = document.createElement("span"); w.className = "san w"; w.textContent = sanMoves[i] || "";
+      var b = document.createElement("span"); b.className = "san b"; b.textContent = sanMoves[i + 1] || "";
+      li.appendChild(n); li.appendChild(w); li.appendChild(b);
+      els.moveList.appendChild(li);
+    }
+    els.moveList.scrollTop = els.moveList.scrollHeight;
+  }
   function record(mover, from, to, victimKey) {
+    if (window.__suppressRecord) return; // the castling rook move is folded into "O-O"
     var white = isWhiteKey(mover);
     var pieces = window.main && window.main.variables.pieces;
-    var glyph = pieces && pieces[mover] ? pieces[mover].img : "";
-    moveNo++;
-    var li = document.createElement("li");
-    var n = document.createElement("span"); n.className = "n"; n.textContent = moveNo;
-    var g = document.createElement("span"); g.className = "g " + (white ? "w" : "b"); g.innerHTML = glyph;
-    var d = document.createElement("span"); d.className = "d"; d.textContent = algebraic(to); // textContent = no HTML injection
-    li.appendChild(n); li.appendChild(g); li.appendChild(d);
-    els.moveList.appendChild(li);
-    els.moveList.scrollTop = els.moveList.scrollHeight;
-
-    if (victimKey && victimKey !== "null" && pieces && pieces[victimKey]) {
+    var capture = victimKey && victimKey !== "null";
+    sanMoves.push(toSan(mover, from, to, capture));
+    renderMoves();
+    if (capture && pieces && pieces[victimKey]) {
       var tray = (white ? 0 : 1) === mySide ? els.youTray : els.oppTray;
       var span = document.createElement("span");
       span.innerHTML = pieces[victimKey].img; // static piece glyph entity
@@ -76,6 +107,20 @@
     }
   }
   window.GameUI = { record: record, turnChanged: turnChanged };
+
+  function buildPGN() {
+    var tags =
+      '[Event "Just Another Chess Game"]\n' +
+      '[Site "' + location.host + '"]\n' +
+      '[White "' + whiteNameG + '"]\n' +
+      '[Black "' + blackNameG + '"]\n' +
+      '[Result "' + resultG + '"]\n\n';
+    var body = "";
+    for (var i = 0; i < sanMoves.length; i += 2) {
+      body += (i / 2 + 1) + ". " + sanMoves[i] + (sanMoves[i + 1] ? " " + sanMoves[i + 1] : "") + " ";
+    }
+    return tags + body.trim() + (resultG !== "*" ? " " + resultG : "");
+  }
 
   // ---- overlays ----
   function showOverlay(o) {
@@ -96,47 +141,55 @@
     btn.classList.add("copied");
     setTimeout(function () { btn.textContent = old; btn.classList.remove("copied"); }, 1400);
   }
-  function copyLink(btn, done) {
-    var link = inviteLink();
+  function copyText(text, btn, done) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(link).then(function () { flashCopied(btn, done); }, function () { prompt("Copy this link:", link); });
-    } else { prompt("Copy this link:", link); }
+      navigator.clipboard.writeText(text).then(function () { flashCopied(btn, done); }, function () { prompt("Copy:", text); });
+    } else { prompt("Copy:", text); }
   }
 
   function sideChip(el, side) { el.textContent = side === 0 ? "White" : "Black"; el.className = "pc-side " + (side === 0 ? "w" : "b"); }
-
   function setCards(whiteName, blackName) {
+    whiteNameG = whiteName; blackNameG = blackName;
     els.youName.textContent = (mySide === 0 ? whiteName : blackName) + " (you)";
     els.oppName.textContent = mySide === 0 ? blackName : whiteName;
     sideChip(els.youSide, mySide);
     sideChip(els.oppSide, 1 - mySide);
   }
-  function applyFlip() { els.board.classList.toggle("flip", mySide === 1); }
+  function applyFlip() {
+    var flipped = mySide === 1;
+    els.board.classList.toggle("flip", flipped);
+    buildCoords(flipped);
+  }
 
   function startClock() {
     if (typeof window.resetTimer === "function") window.resetTimer();
     if (typeof window.timer === "function") window.timer();
   }
+  function stopClock() { if (typeof window.stopTimer === "function") window.stopTimer(); }
 
-  // Fresh game (first game or after rematch): rebuild the board and UI.
+  function resetBoardUI() {
+    els.moveList.innerHTML = ""; els.youTray.innerHTML = ""; els.oppTray.innerHTML = "";
+    sanMoves = []; resultG = "*";
+  }
+
   function beginGame(whiteName, blackName) {
     started = true; over = false;
     hideOverlay();
-    els.moveList.innerHTML = ""; els.youTray.innerHTML = ""; els.oppTray.innerHTML = ""; moveNo = 0;
+    resetBoardUI();
     setCards(whiteName, blackName);
     applyFlip();
-    window.Engine.reset(mySide); // rebuild starting position + Engine.start
+    window.Engine.reset(mySide);
     startClock();
     turnChanged();
     els.resign.disabled = false; resetResign();
     setConn("on", "Live");
+    if (window.Sfx) Sfx.start();
   }
 
-  // Reconnection: rebuild the board by replaying the move log.
   function resumeGame(msg) {
     started = true; over = false;
     hideOverlay();
-    els.moveList.innerHTML = ""; els.youTray.innerHTML = ""; els.oppTray.innerHTML = ""; moveNo = 0;
+    resetBoardUI();
     setCards(msg.white, msg.black);
     applyFlip();
     window.Engine.reset(mySide);
@@ -167,8 +220,12 @@
   });
 
   els.codeLabel.textContent = code || "·····";
-  els.copyInvite.addEventListener("click", function () { copyLink(els.copyInvite); });
-  els.ovCopy.addEventListener("click", function () { copyLink(els.ovCopy, "Copied!"); });
+  els.copyInvite.addEventListener("click", function () { copyText(inviteLink(), els.copyInvite); });
+  els.ovCopy.addEventListener("click", function () { copyText(inviteLink(), els.ovCopy, "Copied!"); });
+  if (els.copyPgn) els.copyPgn.addEventListener("click", function () {
+    if (!sanMoves.length) return;
+    copyText(buildPGN(), els.copyPgn, "Copied!");
+  });
   els.rematch.addEventListener("click", function () {
     send({ t: "rematch" });
     els.rematch.disabled = true;
@@ -209,7 +266,6 @@
         sideChip(els.youSide, mySide);
         applyFlip();
         break;
-
       case "waiting":
         setConn("wait", "Waiting");
         if (!started) {
@@ -219,62 +275,51 @@
           showOverlay({ title: "Game ready", msg: "You're in. Share this game so a friend can join:", invite: true });
         }
         break;
-
       case "ready":
         beginGame(m.white, m.black);
         break;
-
       case "resume":
         resumeGame(m);
         break;
-
       case "move":
         if (validMove(m)) window.Engine.applyMove(m.kind, m.piece, m.to);
         break;
-
       case "gameover":
-        endGame(m.reason, m.winner === mySide);
+        endGame(m.reason, m.winner === mySide, m.winner);
         break;
-
       case "opponent_disconnected":
         if (over) break;
         setConn("wait", "Opponent away");
         showOverlay({ title: "Opponent dropped", msg: "Waiting for them to reconnect…" });
         break;
-
       case "opponent_reconnected":
         if (over) break;
         hideOverlay();
         setConn("on", "Live");
         break;
-
       case "opponent_left":
         if (over) break;
         over = true; started = false;
-        stopClock();
-        window.Engine.stop();
+        stopClock(); window.Engine.stop();
+        resultG = mySide === 0 ? "1-0" : "0-1";
         els.turn.className = "turn-banner win"; els.turn.textContent = "You win";
         els.resign.disabled = true;
+        if (window.Sfx) Sfx.win();
         showOverlay({ title: "You win!", result: "win", msg: "Your opponent left the game.", actions: true, rematch: false });
         setConn("off", "Opponent left");
         break;
-
       case "opponent_gone":
-        // Opponent left after the game ended — no rematch is coming.
         els.rematch.disabled = true;
         els.rematch.textContent = "Opponent left";
         break;
-
       case "rematch_offer":
         els.rematch.textContent = "Accept rematch ✓";
         break;
-
       case "rematch_start":
         mySide = m.side;
         applyFlip();
         els.rematch.disabled = false; els.rematch.textContent = "Rematch";
         break;
-
       case "full":
         rejected = true;
         showOverlay({ title: "Game full", msg: "This game already has two players. Start your own from the lobby.", actions: true, rematch: false });
@@ -283,20 +328,19 @@
     }
   }
 
-  function stopClock() { if (typeof window.stopTimer === "function") window.stopTimer(); }
-
-  function endGame(reason, iWon) {
+  function endGame(reason, iWon, winner) {
     over = true; started = false;
-    stopClock();
-    window.Engine.stop();
+    stopClock(); window.Engine.stop();
     els.resign.disabled = true; resetResign();
+    resultG = winner === 0 ? "1-0" : "0-1";
     els.turn.className = "turn-banner " + (iWon ? "win" : "lose");
     els.turn.textContent = iWon ? "You win" : "You lose";
     var msg = "";
     if (reason === "checkmate") msg = iWon ? "Checkmate. Well played." : "Checkmate. Better luck next time.";
     else if (reason === "resign") msg = iWon ? "Your opponent resigned." : "You resigned.";
     else if (reason === "impossible") msg = iWon ? "Your opponent made 3 illegal moves." : "You made 3 illegal moves.";
-    if (!iWon) playSound("/sounds/pacman.wav");
+    else if (reason === "time") msg = iWon ? "Your opponent ran out of time." : "You ran out of time.";
+    if (window.Sfx) { iWon ? Sfx.win() : Sfx.lose(); }
     els.rematch.disabled = false; els.rematch.textContent = "Rematch";
     showOverlay({ title: iWon ? "You win!" : "You lose", result: iWon ? "win" : "lose", msg: msg, actions: true });
   }
@@ -310,6 +354,7 @@
         showOverlay({ title: "Bad link", msg: "This game link looks invalid. Head back and start a new game.", actions: true, rematch: false });
         return;
       }
+      buildCoords(false);
       connect();
     },
   };

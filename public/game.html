@@ -21,7 +21,9 @@
   <main class="game">
     <section class="board-col">
       <div id="turn" class="turn-banner">Connecting…</div>
-      <div class="board-wrap">
+      <div class="board-frame">
+        <div class="ranks" id="ranks" aria-hidden="true"></div>
+        <div class="board-wrap">
         <div id="board" class="board">
         <div class="chessSquare" id="1_8"></div>
         <div class="chessSquare brown" id="2_8"></div>
@@ -88,6 +90,8 @@
         <div class="chessSquare brown" id="7_1"></div>
         <div class="chessSquare" id="8_1"></div>
         </div>
+        </div>
+        <div class="files" id="files" aria-hidden="true"></div>
       </div>
       <p id="sideLabel" class="side-label"></p>
     </section>
@@ -109,9 +113,10 @@
       <div class="moves panel">
         <div class="moves-head">
           <span class="eyebrow">Moves</span>
-          <span id="impossibleCounter" class="imp">Impossible Moves: 0</span>
+          <button id="copyPgn" class="mini-btn" type="button" title="Copy this game as PGN">PGN &#10697;</button>
         </div>
         <ol id="moveList" class="move-list"></ol>
+        <span id="impossibleCounter" class="imp">Impossible Moves: 0</span>
       </div>
 
       <div class="player-card you" id="youCard">

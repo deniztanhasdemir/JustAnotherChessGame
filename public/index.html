@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Just Another Chess Game</title>
+  <meta name="description" content="Two-player neon chess. Quick match or invite a friend with a game code.">
+  <link rel="stylesheet" href="/stylesheets/arcade.css">
+  <link rel="stylesheet" href="/stylesheets/lobby.css">
+</head>
+<body>
+  <main class="lobby">
+    <div class="glyph-bg" aria-hidden="true">&#9822;</div>
+
+    <header class="lobby-head">
+      <p class="eyebrow">Two players &middot; Real-time &middot; No sign-up</p>
+      <h1 class="wordmark title">Just&nbsp;Another<br>Chess&nbsp;Game</h1>
+      <div class="board-rule" aria-hidden="true"></div>
+    </header>
+
+    <section class="panel console">
+      <label class="handle" for="name">
+        <span class="eyebrow">Your handle</span>
+        <input id="name" class="field field-name" maxlength="16" placeholder="PLAYER" autocomplete="off">
+      </label>
+
+      <button id="quick" class="btn btn-primary btn-lg btn-block">&#9654;&nbsp; Quick Play</button>
+      <p class="hint" id="quick-hint">Get matched with the next player looking for a game.</p>
+
+      <div class="or"><span>or play a friend</span></div>
+
+      <div class="two">
+        <button id="create" class="btn btn-block">Create Game</button>
+        <form id="joinform" class="join" autocomplete="off">
+          <input id="code" class="field" maxlength="8" placeholder="CODE" aria-label="Game code" autocomplete="off" spellcheck="false">
+          <button id="join" class="btn btn-block" type="submit">Join</button>
+        </form>
+      </div>
+      <p class="hint">Create a game for a private link to share, or enter a friend's code.</p>
+      <p class="err" id="err" hidden></p>
+    </section>
+
+    <footer class="lobby-foot">
+      <span>Made by Deniz&nbsp;Tan&nbsp;Hasdemir &amp; Can&nbsp;Sağtürk</span>
+      <a href="https://github.com/deniztanhasdemir/JustAnotherChessGame" target="_blank" rel="noopener">Source&nbsp;&#8599;</a>
+    </footer>
+  </main>
+  <script src="/javascripts/lobby.js"></script>
+</body>
+</html>

@@ -13,18 +13,18 @@ function timer(){
 
         if(seconds < 10){
             if(minutes < 10){
-                timer.innerHTML = `Time: 0${minutes}.0${seconds}`;
+                timer.innerHTML = `0${minutes}.0${seconds}`;
             }
             else{
-                timer.innerHTML = `Time: ${minutes}.0${seconds}`;
+                timer.innerHTML = `${minutes}.0${seconds}`;
             }
         }
         else{
             if(minutes < 10){
-                timer.innerHTML = `Time: 0${minutes}.${seconds}`;
+                timer.innerHTML = `0${minutes}.${seconds}`;
             }
             else{
-                timer.innerHTML = `Time: ${minutes}.${seconds}`;
+                timer.innerHTML = `${minutes}.${seconds}`;
             }
         }
 

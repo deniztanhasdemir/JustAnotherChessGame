@@ -1,140 +1,169 @@
 <!DOCTYPE html>
-<html>
 <html lang="en">
-  <head>
-      <meta charset="utf-8">
-      <title>Just Another Chess Game</title>
-      <link rel="stylesheet" href="stylesheets/gameStyle.css">
-  </head>
-  <body>
-    <div id = "timeDiv">Time: 00.00</div>
-    <div id="game">
-
-        <div id='turn'>Waiting for other player</div>
-        <p id="sideLabel"></p>
-        <p id="impossibleCounter">Impossible Moves: 0</p>
-
-        <div class='chessCeller'>8</div>
-        <div class='chessSquare' id='1_8'></div>
-        <div class='chessSquare brown' id='2_8'></div>
-        <div class='chessSquare' id='3_8'></div>
-        <div class='chessSquare brown' id='4_8'></div>
-        <div class='chessSquare' id='5_8'></div>
-        <div class='chessSquare brown' id='6_8'></div>
-        <div class='chessSquare' id='7_8'></div>
-        <div class='chessSquare brown' id='8_8'></div>
-
-        <div class='chessCeller'>7</div>
-        <div class='chessSquare brown' id='1_7'></div>
-        <div class='chessSquare' id='2_7'></div>
-        <div class='chessSquare brown' id='3_7'></div>
-        <div class='chessSquare' id='4_7'></div>
-        <div class='chessSquare brown' id='5_7'></div>
-        <div class='chessSquare' id='6_7'></div>
-        <div class='chessSquare brown' id='7_7'></div>
-        <div class='chessSquare' id='8_7'></div>
-
-        <div class='chessCeller'>6</div>
-        <div class='chessSquare' id='1_6'></div>
-        <div class='chessSquare brown' id='2_6'></div>
-        <div class='chessSquare' id='3_6'></div>
-        <div class='chessSquare brown' id='4_6'></div>
-        <div class='chessSquare' id='5_6'></div>
-        <div class='chessSquare brown' id='6_6'></div>
-        <div class='chessSquare' id='7_6'></div>
-        <div class='chessSquare brown' id='8_6'></div>
-
-        <div class='chessCeller'>5</div>
-        <div class='chessSquare brown' id='1_5'></div>
-        <div class='chessSquare' id='2_5'></div>
-        <div class='chessSquare brown' id='3_5'></div>
-        <div class='chessSquare' id='4_5'></div>
-        <div class='chessSquare brown' id='5_5'></div>
-        <div class='chessSquare' id='6_5'></div>
-        <div class='chessSquare brown' id='7_5'></div>
-        <div class='chessSquare' id='8_5'></div>
-
-        <div class='chessCeller'>4</div>
-        <div class='chessSquare' id='1_4'></div>
-        <div class='chessSquare brown' id='2_4'></div>
-        <div class='chessSquare' id='3_4'></div>
-        <div class='chessSquare brown' id='4_4'></div>
-        <div class='chessSquare' id='5_4'></div>
-        <div class='chessSquare brown' id='6_4'></div>
-        <div class='chessSquare' id='7_4'></div>
-        <div class='chessSquare brown' id='8_4'></div>
-
-        <div class='chessCeller'>3</div>
-        <div class='chessSquare brown' id='1_3'></div>
-        <div class='chessSquare' id='2_3'></div>
-        <div class='chessSquare brown' id='3_3'></div>
-        <div class='chessSquare' id='4_3'></div>
-        <div class='chessSquare brown' id='5_3'></div>
-        <div class='chessSquare' id='6_3'></div>
-        <div class='chessSquare brown' id='7_3'></div>
-        <div class='chessSquare' id='8_3'></div>
-
-        <div class='chessCeller'>2</div>
-        <div class='chessSquare' id='1_2'></div>
-        <div class='chessSquare brown' id='2_2'></div>
-        <div class='chessSquare' id='3_2'></div>
-        <div class='chessSquare brown' id='4_2'></div>
-        <div class='chessSquare' id='5_2'></div>
-        <div class='chessSquare brown' id='6_2'></div>
-        <div class='chessSquare' id='7_2'></div>
-        <div class='chessSquare brown' id='8_2'></div>
-
-        <div class='chessCeller'>1</div>
-        <div class='chessSquare brown' id='1_1'></div>
-        <div class='chessSquare' id='2_1'></div>
-        <div class='chessSquare brown' id='3_1'></div>
-        <div class='chessSquare' id='4_1'></div>
-        <div class='chessSquare brown' id='5_1'></div>
-        <div class='chessSquare' id='6_1'></div>
-        <div class='chessSquare brown' id='7_1'></div>
-        <div class='chessSquare' id='8_1'></div>
-
-        <div class='chessCeller'></div>
-        <div class='chessCeller'>a</div>
-        <div class='chessCeller'>b</div>
-        <div class='chessCeller'>c</div>
-        <div class='chessCeller'>d</div>
-        <div class='chessCeller'>e</div>
-        <div class='chessCeller'>f</div>
-        <div class='chessCeller'>g</div>
-        <div class='chessCeller'>h</div>
-
-        <script language="javascript" type="text/javascript">
-          function playSound(soundfile) {
-            if (navigator.userAgent.indexOf('Firefox') != -1) {
-              document.getElementById("dummy").innerHTML = "<embed src=\"" + soundfile + "\" hidden=\"true\" autostart=\"true\" loop=\"false\" type=\"application/x-mplayer2\" />";
-            } else {
-              document.getElementById("dummy").innerHTML = "<embed src=\"" + soundfile + "\" hidden=\"true\" autostart=\"true\" loop=\"false\" />";
-            }
-          }
-        </script>
-        
-        
-
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Just Another Chess Game</title>
+  <link rel="stylesheet" href="/stylesheets/arcade.css">
+  <link rel="stylesheet" href="/stylesheets/game.css">
+</head>
+<body>
+  <div class="topbar">
+    <a class="brand wordmark" href="/">JACG</a>
+    <div class="topbar-right">
+      <button id="copyInvite" class="chip" type="button" title="Copy the invite link">
+        <span class="chip-k">CODE</span><b id="codeLabel">·····</b><span class="chip-ico">&#10697;</span>
+      </button>
+      <span id="conn" class="pill off"><span class="dot"></span><span id="connText">Connecting</span></span>
     </div>
+  </div>
 
-    
+  <main class="game">
+    <section class="board-col">
+      <div id="turn" class="turn-banner">Connecting…</div>
+      <div class="board-wrap">
+        <div id="board" class="board">
+        <div class="chessSquare" id="1_8"></div>
+        <div class="chessSquare brown" id="2_8"></div>
+        <div class="chessSquare" id="3_8"></div>
+        <div class="chessSquare brown" id="4_8"></div>
+        <div class="chessSquare" id="5_8"></div>
+        <div class="chessSquare brown" id="6_8"></div>
+        <div class="chessSquare" id="7_8"></div>
+        <div class="chessSquare brown" id="8_8"></div>
+        <div class="chessSquare brown" id="1_7"></div>
+        <div class="chessSquare" id="2_7"></div>
+        <div class="chessSquare brown" id="3_7"></div>
+        <div class="chessSquare" id="4_7"></div>
+        <div class="chessSquare brown" id="5_7"></div>
+        <div class="chessSquare" id="6_7"></div>
+        <div class="chessSquare brown" id="7_7"></div>
+        <div class="chessSquare" id="8_7"></div>
+        <div class="chessSquare" id="1_6"></div>
+        <div class="chessSquare brown" id="2_6"></div>
+        <div class="chessSquare" id="3_6"></div>
+        <div class="chessSquare brown" id="4_6"></div>
+        <div class="chessSquare" id="5_6"></div>
+        <div class="chessSquare brown" id="6_6"></div>
+        <div class="chessSquare" id="7_6"></div>
+        <div class="chessSquare brown" id="8_6"></div>
+        <div class="chessSquare brown" id="1_5"></div>
+        <div class="chessSquare" id="2_5"></div>
+        <div class="chessSquare brown" id="3_5"></div>
+        <div class="chessSquare" id="4_5"></div>
+        <div class="chessSquare brown" id="5_5"></div>
+        <div class="chessSquare" id="6_5"></div>
+        <div class="chessSquare brown" id="7_5"></div>
+        <div class="chessSquare" id="8_5"></div>
+        <div class="chessSquare" id="1_4"></div>
+        <div class="chessSquare brown" id="2_4"></div>
+        <div class="chessSquare" id="3_4"></div>
+        <div class="chessSquare brown" id="4_4"></div>
+        <div class="chessSquare" id="5_4"></div>
+        <div class="chessSquare brown" id="6_4"></div>
+        <div class="chessSquare" id="7_4"></div>
+        <div class="chessSquare brown" id="8_4"></div>
+        <div class="chessSquare brown" id="1_3"></div>
+        <div class="chessSquare" id="2_3"></div>
+        <div class="chessSquare brown" id="3_3"></div>
+        <div class="chessSquare" id="4_3"></div>
+        <div class="chessSquare brown" id="5_3"></div>
+        <div class="chessSquare" id="6_3"></div>
+        <div class="chessSquare brown" id="7_3"></div>
+        <div class="chessSquare" id="8_3"></div>
+        <div class="chessSquare" id="1_2"></div>
+        <div class="chessSquare brown" id="2_2"></div>
+        <div class="chessSquare" id="3_2"></div>
+        <div class="chessSquare brown" id="4_2"></div>
+        <div class="chessSquare" id="5_2"></div>
+        <div class="chessSquare brown" id="6_2"></div>
+        <div class="chessSquare" id="7_2"></div>
+        <div class="chessSquare brown" id="8_2"></div>
+        <div class="chessSquare brown" id="1_1"></div>
+        <div class="chessSquare" id="2_1"></div>
+        <div class="chessSquare brown" id="3_1"></div>
+        <div class="chessSquare" id="4_1"></div>
+        <div class="chessSquare brown" id="5_1"></div>
+        <div class="chessSquare" id="6_1"></div>
+        <div class="chessSquare brown" id="7_1"></div>
+        <div class="chessSquare" id="8_1"></div>
+        </div>
+      </div>
+      <p id="sideLabel" class="side-label"></p>
+    </section>
 
+    <aside class="side">
+      <div class="player-card" id="oppCard">
+        <div class="pc-top">
+          <span class="pc-name" id="oppName">Waiting for opponent…</span>
+          <span class="pc-side" id="oppSide"></span>
+        </div>
+        <div class="tray" id="oppTray" aria-label="Pieces you captured"></div>
+      </div>
 
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
-    <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
-    <script src="javascripts/app.js"></script>
-    <script src="javascripts/time.js"></script>
+      <div class="clock-row">
+        <span class="eyebrow">Elapsed</span>
+        <span id="timeDiv" class="clock">00.00</span>
+      </div>
 
-    <div id="wrap">
-      <br/>
-      <button class="fullscreen" onclick="toggleFullScreen()" ontouchstart="toggleFullScreen()">Full Screen</button>
-        <span id="dummy">
-          <a href="#" onclick="playSound('sounds/pacman.wav');">Surrender</a>
+      <div class="moves panel">
+        <div class="moves-head">
+          <span class="eyebrow">Moves</span>
+          <span id="impossibleCounter" class="imp">Impossible Moves: 0</span>
+        </div>
+        <ol id="moveList" class="move-list"></ol>
+      </div>
 
-        </span>
-        
+      <div class="player-card you" id="youCard">
+        <div class="pc-top">
+          <span class="pc-name" id="youName">You</span>
+          <span class="pc-side" id="youSide"></span>
+        </div>
+        <div class="tray" id="youTray" aria-label="Pieces your opponent captured"></div>
+      </div>
 
+      <div class="actions">
+        <button id="resignBtn" class="btn btn-danger btn-block" type="button" disabled>Resign</button>
+        <div class="actions-row">
+          <button id="soundBtn" class="btn" type="button" title="Toggle sound">&#128266; Sound</button>
+          <a href="/" class="btn">Leave</a>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="overlay" class="overlay" hidden>
+    <div class="overlay-card panel">
+      <h2 id="ovTitle" class="ov-title wordmark">Waiting</h2>
+      <p id="ovMsg" class="ov-msg"></p>
+      <div id="ovInvite" class="ov-invite" hidden>
+        <div class="ov-code" id="ovCode">·····</div>
+        <button id="ovCopy" class="btn btn-primary btn-block" type="button">Copy invite link</button>
+        <p class="ov-hint" id="ovCopyHint">Send this link to a friend to play together.</p>
+      </div>
+      <div id="ovActions" class="ov-actions" hidden>
+        <button id="rematchBtn" class="btn btn-primary btn-block" type="button">Rematch</button>
+        <a href="/" class="btn btn-block">Back to lobby</a>
+      </div>
     </div>
-  </body>
+  </div>
+
+  <span id="dummy" class="visually-hidden"></span>
+
+  <script>
+    // Play a short sound effect unless the player muted sound.
+    function playSound(soundfile) {
+      try {
+        if (window.__muted) return;
+        var a = new Audio(soundfile);
+        a.volume = 0.5;
+        a.play().catch(function () {});
+      } catch (e) {}
+    }
+  </script>
+  <script src="/javascripts/jquery.min.js"></script>
+  <script src="/javascripts/app.js"></script>
+  <script src="/javascripts/time.js"></script>
+  <script src="/javascripts/net.js"></script>
+</body>
 </html>

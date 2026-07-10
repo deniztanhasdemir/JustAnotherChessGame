@@ -5,111 +5,59 @@ var canPlay = false;
 
 
 
-//MESSAGE SENDER/////////////////////////////////////////////////////////////////////////////
-// Connect to the game server over the same host the page was served from,
-// upgrading to wss:// automatically when the site is served over HTTPS.
-var wsProtocol = (location.protocol === "https:") ? "wss://" : "ws://";
-var socket = new WebSocket(wsProtocol + location.host + "/ws");
+//MESSAGE BRIDGE//////////////////////////////////////////////////////////////
+// The chess engine (below) is intact; only its network transport moved to
+// net.js. The engine calls the *Message() helpers when the local player acts,
+// and net.js calls window.Engine.* to drive the board from the network.
+var socket = null;            // kept so the engine's existing call sites resolve
+var INITIAL_PIECES = null;    // pristine starting layout, snapshotted at setup
 
-function moveMessage(wSocket, playerId, piece, from, target){
-  wSocket.send(`PLAYER_MOVE, ${playerId}, ${piece}, ${from}, ${target}`);
-}
+function moveMessage(_s, _pid, piece, from, target)    { if (window.NET) NET.sendMove("move", piece, from, target); }
+function castleMessage(_s, _pid, piece, from, target)  { if (window.NET) NET.sendMove("castle", piece, from, target); }
+function captureMessage(_s, _pid, piece, from, target) { if (window.NET) NET.sendMove("capture", piece, from, target); }
+function checkmateMessage()  { if (window.NET) NET.sendEnd("checkmate"); }
+function impossibleMessage() { if (window.NET) NET.sendEnd("impossible"); }
 
-function castleMessage(wSocket, playerId, piece, from, target){
-  wSocket.send(`PLAYER_CASTLE, ${playerId}, ${piece}, ${from}, ${target}`);
-}
-
-function captureMessage(wSocket, playerId, piece, from, target){
-  wSocket.send(`PLAYER_CAPTURE, ${playerId}, ${piece}, ${from}, ${target}`);
-}
-
-function checkmateMessage(wSocket, playerId){
-  wSocket.send(`PLAYER_CHECKMATE, ${playerId}`);
-}
-
-function impossibleMessage(wSocket, playerId){
-  wSocket.send(`PLAYER_IMPOSSIBLE, ${playerId}`);
-}
-
-
-//MESSAGE RECEIVER////////////////////////////////////////////////////////////////////
-
-socket.onmessage = function(event){
-  //socket.send("Server message received");
-  var serverMessage = event.data.split(", ")
-  if(serverMessage[0] == "GAME_READY"){
-      console.log("Player found, game is ready");
-      side = serverMessage[1];
-      playerId = serverMessage[2];
-      console.log(`You are side: ${side} with ID ${playerId}`)
-      document.getElementById("turn").innerHTML = "White Plays";
-      document.getElementById("sideLabel").visibility = "visible";
-      timer();
-      if(side == 0){
-        canPlay = true;
-        document.getElementById("sideLabel").innerHTML = "You are the whites";
-      }
-      else{
-        document.getElementById("sideLabel").innerHTML = "You are the blacks";
-      }
-  }
-
-  else if(serverMessage[0] == "OPPOSITE_MOVE"){
-    console.log(`Piece: ${serverMessage[1]}, From: ${serverMessage[2]}, To: ${serverMessage[3]}`);
-    main.variables.selectedpiece = serverMessage[1];
-    faker = {
-      id: serverMessage[3]
-    }
-    main.methods.move(faker, serverMessage[1]);
-    main.methods.endturn();
-  }
-
-  else if(serverMessage[0] == "OPPOSITE_CASTLE"){
-    console.log(`Piece: ${serverMessage[1]}, From: ${serverMessage[2]}, To: ${serverMessage[3]}`);
-    main.variables.selectedpiece = serverMessage[1];
-    faker = {
-      id: serverMessage[3]
-    }
-    main.methods.move(faker, serverMessage[1]);
-    main.methods.fakeEndTurn();
-  }
-
-  else if(serverMessage[0] == "OPPOSITE_CAPTURE"){
-    console.log(`Piece: ${serverMessage[1]}, From: ${serverMessage[2]}, To: ${serverMessage[3]}`);
-    main.variables.selectedpiece = serverMessage[1];
-    faker = {
-      id: serverMessage[3]
-    }
-    main.methods.capture(faker, serverMessage[1]);
-    main.methods.endturn();
-  }
-
-  else if(serverMessage[0] == "OPPOSITE_CHECKMATE"){
+// Hooks net.js uses to drive the board from network events.
+window.Engine = {
+  // Begin (or restart) a game as the given side (0 = white, 1 = black).
+  start: function (mySide) {
+    side = Number(mySide);
+    canPlay = (side === 0);
+    var t = document.getElementById("turn"); if (t) t.innerHTML = "White to move";
+    var sl = document.getElementById("sideLabel");
+    if (sl) sl.innerHTML = side === 0 ? "You play White" : "You play Black";
+  },
+  // Apply the opponent's move. kind: "move" | "castle" | "capture".
+  applyMove: function (kind, piece, to) {
+    main.variables.selectedpiece = piece;
+    var faker = { id: to };
+    if (kind === "capture") { main.methods.capture(faker, piece); main.methods.endturn(); }
+    else if (kind === "castle") { main.methods.move(faker, piece); main.methods.fakeEndTurn(); }
+    else { main.methods.move(faker, piece); main.methods.endturn(); }
+  },
+  // Freeze play and clear highlights when a game ends.
+  stop: function () {
     main.methods.togglehighlight(main.variables.highlighted);
     main.variables.highlighted.length = 0;
     canPlay = false;
-    document.getElementById("turn").innerHTML = "YOU LOST :(";
-  }
-
-  else if(serverMessage[0] == "OPPOSITE_IMPOSSIBLE"){
-    main.methods.togglehighlight(main.variables.highlighted);
+  },
+  // Rebuild the starting position for a rematch, as the given side.
+  reset: function (mySide) {
+    main.variables.pieces = JSON.parse(JSON.stringify(INITIAL_PIECES));
+    main.variables.turn = "w";
+    main.variables.selectedpiece = "";
     main.variables.highlighted.length = 0;
-    canPlay = false;
-    document.getElementById("turn").innerHTML = "YOU WON! 3rd IMPOSSIBLE MOVE BY THE OTHER SIDE";
-  }
+    $(".chessSquare").removeClass("blue").html("").attr("chess", "null");
+    main.methods.gamesetup();
+    var ic = document.getElementById("impossibleCounter");
+    if (ic) ic.innerHTML = "Impossible Moves: 0";
+    window.Engine.start(mySide);
+  },
+};
 
-  else if(serverMessage[0] == "FORFEIT"){
-    main.methods.togglehighlight(main.variables.highlighted);
-    main.variables.highlighted.length = 0;
-    playSound('sounds/pacman.wav');
-    canPlay = false;
-    document.getElementById("turn").innerHTML = "OTHER PLAYER LEFT. YOU WON!";
-  }
 
-  else{
-    console.log(`Server says: <${serverMessage[0]}>`);
-  }
-}
+// (Networking now lives in net.js, which drives the board via window.Engine.)
 
 
 
@@ -732,6 +680,7 @@ let main = {
       }
       //to be captured piece
       var toBeCaptured = $('#' + target.id).attr('chess');
+      if (window.GameUI) GameUI.record(selectedpiece, main.variables.pieces[selectedpiece].position, target.id, toBeCaptured);
 
       $('#' + target.id).html(main.variables.pieces[selectedpiece].img);
       $('#' + target.id).attr('chess', selectedpiece);
@@ -754,6 +703,7 @@ let main = {
       if(servergiven != undefined){
         selectedpiece = servergiven;
       }
+      if (window.GameUI) GameUI.record(selectedpiece, main.variables.pieces[selectedpiece].position, target.id, null);
 
       $('#' + target.id).html(main.variables.pieces[selectedpiece].img);
       $('#' + target.id).attr('chess', selectedpiece);
@@ -794,7 +744,7 @@ let main = {
         else if(side == 1){
           canPlay = true;
         }
-      } else if (main.variables.turn = 'b'){
+      } else if (main.variables.turn == 'b'){
 
 
         if(targetId != undefined){
@@ -821,6 +771,7 @@ let main = {
           canPlay = true;
         }
       }
+      if (window.GameUI) GameUI.turnChanged();
       //console.log("Turn ended");
     },
 
@@ -973,8 +924,11 @@ let main = {
     },
   }
 };
+window.main = main; // expose the engine state to net.js
     $(document).ready(function() {
+    INITIAL_PIECES = JSON.parse(JSON.stringify(main.variables.pieces));
     main.methods.gamesetup();
+    if (window.NET) NET.ready();
     $('.chessSquare').click(function godLike(e) {
       if(canPlay){
         var selectedpiece = {
@@ -1171,53 +1125,5 @@ let main = {
 
 
 
-    //FULSCREEN////////////////////////////////////////////////////////////////////////////
-    var db, isfullscreen = false;
-    function toggleFullScreen(){
-        db = document.body;
-        if(isfullscreen == false){
-            if(db.requestFullScreen){
-                db.requestFullScreen();
-            } else if(db.webkitRequestFullscreen){
-                db.webkitRequestFullscreen();
-            } else if(db.mozRequestFullScreen){
-                db.mozRequestFullScreen();
-            } else if(db.msRequestFullscreen){
-                db.msRequestFullscreen();
-            }
-            isfullscreen = true;
-            wrap.style.width = window.screen.width+"px";
-            wrap.style.height = window.screen.height+"px";
-            //document.getElementsByClassName("fullscreen").innerHTML = "Windowed";
-        } else {
-            if(document.cancelFullScreen){
-                document.cancelFullScreen();
-            } else if(document.exitFullScreen){
-                document.exitFullScreen();
-            } else if(document.mozCancelFullScreen){
-                document.mozCancelFullScreen();
-            } else if(document.webkitCancelFullScreen){
-                document.webkitCancelFullScreen();
-            } else if(document.msExitFullscreen){
-                document.msExitFullscreen();
-            }
-            isfullscreen = false;
-            wrap.style.width = "100%";
-            wrap.style.height = "auto";
-        }
-    }
-    // If the viewport is less than, or equal to, 700 pixels wide, the background color will be yellow. If it is greater than 700, it will change to pink.
-    function resolution(x) {
-      if (x.matches) { // If media query matches
-        document.body.style.backgroundColor = "red";
-      } 
-      else {
-       document.body.style.backgroundColor = "#454545";
-      }
-    }
-    
-    var x = window.matchMedia("(max-width: 600px)")
-    resolution(x) // Call listener function at run time
-    x.addListener(resolution) // Attach listener function on state changes
-    window.alert("If your background is red it means the resolution of the website is not same with game's resolution please change it");
+    // (Removed the old fullscreen toggle and the resolution alert popup.)
     

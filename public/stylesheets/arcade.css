@@ -1,0 +1,167 @@
+/* Just Another Chess Game — arcade design system.
+   One committed dark "cabinet" theme built on the original hot-magenta #fc03f8 + gray. */
+
+@font-face { font-family: "Bungee"; src: url("/fonts/bungee-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Chakra Petch"; src: url("/fonts/chakra-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Chakra Petch"; src: url("/fonts/chakra-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+
+:root {
+  --pink: #fc03f8;
+  --pink-2: #ff5cf6;
+  --pink-dim: #b52bb0;
+  --void: #101014;
+  --void-2: #0a0a0c;
+  --panel: #1a1a20;
+  --panel-2: #24242d;
+  --gray: #454545;
+  --line: #33333d;
+  --line-2: #45454f;
+  --text: #f1eff6;
+  --muted: #9793a6;
+  --good: #34e39b;
+  --bad: #ff5573;
+  --warn: #ffce3a;
+  --glow-s: 0 0 8px rgba(252, 3, 248, .5);
+  --glow-m: 0 0 10px rgba(252, 3, 248, .55), 0 0 26px rgba(252, 3, 248, .3);
+  --glow-l: 0 0 14px rgba(252, 3, 248, .6), 0 0 42px rgba(252, 3, 248, .35);
+  --font-display: "Bungee", Impact, "Arial Black", sans-serif;
+  --font-ui: "Chakra Petch", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  --r: 12px;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 700px at 50% -10%, #1d1430 0%, rgba(29, 20, 48, 0) 55%),
+    radial-gradient(900px 600px at 100% 100%, #17182e 0%, rgba(23, 24, 46, 0) 50%),
+    var(--void);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* CRT scanline + vignette overlay — the cabinet signature. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background:
+    repeating-linear-gradient(to bottom, rgba(255, 255, 255, .028) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 120% at 50% 50%, transparent 62%, rgba(0, 0, 0, .55) 100%);
+  mix-blend-mode: overlay;
+}
+@media (prefers-reduced-motion: no-preference) {
+  body::after { animation: flicker 6s steps(60) infinite; }
+  @keyframes flicker { 0%,100%{opacity:1} 50%{opacity:.93} }
+}
+
+a { color: var(--pink-2); text-underline-offset: 3px; }
+
+/* ---------- wordmark ---------- */
+.wordmark {
+  font-family: var(--font-display);
+  color: var(--pink);
+  text-shadow: var(--glow-m);
+  letter-spacing: .02em;
+  line-height: .98;
+  text-transform: uppercase;
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-size: 15px;
+  padding: 13px 20px;
+  border-radius: 10px;
+  border: 2px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform .08s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-decoration: none;
+  user-select: none;
+}
+.btn:hover { transform: translateY(-2px); border-color: var(--pink); }
+.btn:active { transform: translateY(0); }
+.btn:focus-visible { outline: 3px solid var(--pink-2); outline-offset: 2px; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; transform: none; }
+
+.btn-primary {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: #12030f;
+  box-shadow: var(--glow-s);
+}
+.btn-primary:hover { background: var(--pink-2); border-color: var(--pink-2); box-shadow: var(--glow-l); color: #12030f; }
+
+.btn-danger { border-color: var(--bad); color: var(--bad); }
+.btn-danger:hover { background: var(--bad); color: #1a0308; border-color: var(--bad); box-shadow: 0 0 12px rgba(255,85,115,.5); }
+
+.btn-lg { font-size: 19px; padding: 18px 28px; }
+.btn-block { width: 100%; }
+
+/* ---------- panels ---------- */
+.panel {
+  background: linear-gradient(180deg, var(--panel) 0%, #16161b 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+/* ---------- form controls ---------- */
+.field {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  letter-spacing: .34em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--void-2);
+  border: 2px solid var(--line-2);
+  border-radius: 10px;
+  padding: 14px 16px;
+  width: 100%;
+}
+.field::placeholder { color: #55525f; letter-spacing: .2em; }
+.field:focus { outline: none; border-color: var(--pink); box-shadow: var(--glow-s); }
+
+/* ---------- misc ---------- */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em;
+  text-transform: uppercase; padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--line-2); color: var(--muted); white-space: nowrap;
+}
+.pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+.pill.on { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); }
+.pill.off { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
+.pill.wait { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, transparent); }
+@media (prefers-reduced-motion: no-preference) {
+  .pill.wait .dot, .pill.on .dot { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+}
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

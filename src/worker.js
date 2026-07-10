@@ -61,6 +61,14 @@ export default {
   },
 };
 
+// Retained (unused) so the original v1 Durable Object migration stays valid without
+// a deletion migration. All live gameplay is handled by GameRoom + Matchmaker.
+export class GameHub {
+  async fetch() {
+    return new Response(null, { status: 410 });
+  }
+}
+
 // Pairs Quick Play players: holds at most one "open" code waiting for a second player.
 export class Matchmaker {
   constructor(ctx, env) {

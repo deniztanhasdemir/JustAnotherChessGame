@@ -6,7 +6,10 @@ var canPlay = false;
 
 
 //MESSAGE SENDER/////////////////////////////////////////////////////////////////////////////
-var socket = new WebSocket("ws://localhost:3000");
+// Connect to the game server over the same host the page was served from,
+// upgrading to wss:// automatically when the site is served over HTTPS.
+var wsProtocol = (location.protocol === "https:") ? "wss://" : "ws://";
+var socket = new WebSocket(wsProtocol + location.host + "/ws");
 
 function moveMessage(wSocket, playerId, piece, from, target){
   wSocket.send(`PLAYER_MOVE, ${playerId}, ${piece}, ${from}, ${target}`);

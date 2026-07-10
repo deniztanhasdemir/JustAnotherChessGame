@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "justanotherchessgame",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-01-01",
+  // Serve the browser game (public/) straight from Workers static assets.
+  // Requests that don't match a file fall through to the Worker (see src/worker.js).
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  // Real-time multiplayer state lives in a single Durable Object "lobby".
+  "durable_objects": {
+    "bindings": [
+      { "name": "GAME", "class_name": "GameHub" }
+    ]
+  },
+  // SQLite-backed Durable Object (required on the Workers Free plan).
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GameHub"] }
+  ]
+}

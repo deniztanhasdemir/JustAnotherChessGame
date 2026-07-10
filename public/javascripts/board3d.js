@@ -4,6 +4,7 @@
 // onto squares and forward a click to the matching DOM cell so the engine runs.
 import * as THREE from "/vendor/three.module.min.js";
 import { OrbitControls } from "/vendor/OrbitControls.js";
+import { RoomEnvironment } from "/vendor/RoomEnvironment.js";
 
 const $ = (id) => document.getElementById(id);
 const mount = $("stage3d");
@@ -23,10 +24,16 @@ function init() {
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
   mount.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+
+  // procedural environment for soft PBR reflections (no HDR asset needed)
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -109,56 +116,69 @@ function init() {
   }
 
   // ---- materials + piece geometry ----
-  const whiteMat = new THREE.MeshStandardMaterial({ color: 0xeae4d6, roughness: 0.35, metalness: 0.1 });
-  const blackMat = new THREE.MeshStandardMaterial({ color: 0x2b2732, roughness: 0.45, metalness: 0.2 });
+  const whiteMat = new THREE.MeshStandardMaterial({ color: 0xe9dfc8, roughness: 0.3, metalness: 0.0, envMapIntensity: 0.85 });
+  const blackMat = new THREE.MeshStandardMaterial({ color: 0x1b1922, roughness: 0.32, metalness: 0.15, envMapIntensity: 0.95 });
   const mats = { white: whiteMat, black: blackMat };
 
-  function baseParts(scale) {
-    // flared base + body cylinder, returns array of {geo, y}
-    return [
-      { geo: new THREE.CylinderGeometry(0.34, 0.4, 0.12, 24), y: 0.06 },
-      { geo: new THREE.CylinderGeometry(0.19, 0.32, 0.28 * scale, 24), y: 0.12 + 0.14 * scale },
-    ];
+  // ---- Staunton-ish pieces: turned bodies (LatheGeometry) + an extruded knight ----
+  function lathe(profile) {
+    const pts = profile.map((p) => new THREE.Vector2(Math.max(0.0006, p[0]), p[1]));
+    const g = new THREE.LatheGeometry(pts, 48);
+    g.computeVertexNormals();
+    return g;
   }
-  function meshOf(geo, mat, y) { const m = new THREE.Mesh(geo, mat); m.position.y = y; m.castShadow = true; return m; }
+  const PROFILES = {
+    pawn:   [[0,0],[0.30,0],[0.30,0.05],[0.20,0.09],[0.14,0.13],[0.115,0.20],[0.16,0.235],[0.135,0.265],[0.10,0.30],[0.135,0.325],[0.155,0.40],[0.125,0.46],[0.075,0.50],[0,0.52]],
+    rook:   [[0,0],[0.33,0],[0.33,0.06],[0.22,0.10],[0.175,0.14],[0.165,0.36],[0.20,0.42],[0.235,0.46],[0.235,0.55],[0.205,0.57],[0.205,0.62],[0,0.62]],
+    bishop: [[0,0],[0.31,0],[0.31,0.06],[0.21,0.10],[0.15,0.14],[0.125,0.30],[0.16,0.36],[0.125,0.40],[0.165,0.47],[0.135,0.58],[0.085,0.68],[0.115,0.72],[0.05,0.80],[0,0.84]],
+    queen:  [[0,0],[0.35,0],[0.35,0.06],[0.24,0.11],[0.17,0.15],[0.14,0.36],[0.18,0.44],[0.22,0.48],[0.20,0.52],[0.235,0.58],[0.195,0.64],[0.235,0.68],[0.18,0.72],[0,0.74]],
+    king:   [[0,0],[0.36,0],[0.36,0.06],[0.25,0.11],[0.18,0.16],[0.15,0.38],[0.19,0.46],[0.23,0.50],[0.215,0.54],[0.25,0.60],[0.21,0.66],[0.25,0.72],[0.205,0.80],[0.19,0.88],[0,0.90]],
+    knightBase: [[0,0],[0.32,0],[0.32,0.06],[0.22,0.10],[0.18,0.14],[0.165,0.30],[0.20,0.35],[0,0.35]],
+  };
+  const geoCache = {};
+  const geo = (k) => (geoCache[k] || (geoCache[k] = lathe(PROFILES[k])));
 
-  // build a piece group (base at y=0, grows up). type -> shape.
-  function buildPiece(type, mat) {
+  let knightHeadGeo = null;
+  function knightHead() {
+    if (knightHeadGeo) return knightHeadGeo;
+    var P = [[-0.12,0.10],[-0.18,0.30],[-0.15,0.44],[-0.08,0.50],[-0.03,0.42],[0.02,0.50],[0.07,0.45],[0.06,0.34],[0.15,0.28],[0.235,0.18],[0.245,0.10],[0.20,0.075],[0.13,0.12],[0.05,0.11],[0.0,0.15],[-0.05,0.12],[-0.09,0.11]];
+    var s = new THREE.Shape();
+    s.moveTo(P[0][0], P[0][1]);
+    for (var i = 1; i < P.length; i++) s.lineTo(P[i][0], P[i][1]);
+    s.closePath();
+    var g = new THREE.ExtrudeGeometry(s, { depth: 0.15, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02, bevelSegments: 2 });
+    g.center();
+    g.rotateY(Math.PI / 2); // muzzle faces down-board; profile faces sideways
+    g.computeVertexNormals();
+    knightHeadGeo = g;
+    return g;
+  }
+
+  function part(g, mat, y) { const m = new THREE.Mesh(g, mat); m.position.y = y; m.castShadow = true; return m; }
+
+  // build a piece group (base at y=0, grows up)
+  function buildPiece(type, mat, color) {
     const g = new THREE.Group();
-    const add = (geo, y) => g.add(meshOf(geo, mat, y));
     const kind = type.replace(/^(white|black)/, "").toLowerCase();
-    if (kind === "pawn") {
-      baseParts(0.7).forEach((p) => add(p.geo, p.y));
-      add(new THREE.SphereGeometry(0.2, 20, 16), 0.5);
-    } else if (kind === "rook") {
-      baseParts(1).forEach((p) => add(p.geo, p.y));
-      add(new THREE.CylinderGeometry(0.26, 0.22, 0.16, 24), 0.6);
-      for (let i = 0; i < 4; i++) {
-        const b = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.1), mat);
-        const a = (i / 4) * Math.PI * 2;
-        b.position.set(Math.cos(a) * 0.19, 0.72, Math.sin(a) * 0.19); b.castShadow = true; g.add(b);
-      }
-    } else if (kind === "knight") {
-      baseParts(0.9).forEach((p) => add(p.geo, p.y));
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.34, 0.42), mat);
-      head.position.set(0, 0.66, 0.04); head.rotation.x = -0.35; head.castShadow = true; g.add(head);
-      const snout = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.2), mat);
-      snout.position.set(0, 0.72, 0.24); snout.rotation.x = -0.3; snout.castShadow = true; g.add(snout);
+    if (kind === "knight") {
+      g.add(part(geo("knightBase"), mat, 0));
+      const head = new THREE.Mesh(knightHead(), mat);
+      head.castShadow = true; head.position.set(0, 0.5, 0); head.scale.setScalar(1.2);
+      head.rotation.y = color === "white" ? 0 : Math.PI;
+      g.add(head);
+      return g;
+    }
+    g.add(part(geo(kind), mat, 0));
+    if (kind === "rook") {
+      for (let i = 0; i < 6; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.11, 0.085), mat); const a = (i/6)*Math.PI*2; b.position.set(Math.cos(a)*0.165, 0.64, Math.sin(a)*0.165); b.castShadow = true; g.add(b); }
     } else if (kind === "bishop") {
-      baseParts(1.15).forEach((p) => add(p.geo, p.y));
-      add(new THREE.ConeGeometry(0.2, 0.42, 24), 0.72);
-      add(new THREE.SphereGeometry(0.09, 16, 12), 1.02);
+      g.add(part(new THREE.SphereGeometry(0.05, 16, 12), mat, 0.87));
     } else if (kind === "queen") {
-      baseParts(1.3).forEach((p) => add(p.geo, p.y));
-      add(new THREE.ConeGeometry(0.24, 0.44, 24), 0.78);
-      add(new THREE.TorusGeometry(0.16, 0.05, 12, 24), 1.02);
-      add(new THREE.SphereGeometry(0.11, 16, 12), 1.12);
-    } else { // king
-      baseParts(1.4).forEach((p) => add(p.geo, p.y));
-      add(new THREE.ConeGeometry(0.24, 0.46, 24), 0.82);
-      add(new THREE.CylinderGeometry(0.18, 0.2, 0.12, 24), 1.05);
-      const cv = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.34, 0.08), mat); cv.position.y = 1.26; cv.castShadow = true; g.add(cv);
-      const ch = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.08), mat); ch.position.y = 1.24; ch.castShadow = true; g.add(ch);
+      for (let i = 0; i < 8; i++) { const sp = new THREE.Mesh(new THREE.SphereGeometry(0.042, 12, 10), mat); const a = (i/8)*Math.PI*2; sp.position.set(Math.cos(a)*0.16, 0.76, Math.sin(a)*0.16); sp.castShadow = true; g.add(sp); }
+      g.add(part(new THREE.SphereGeometry(0.058, 14, 12), mat, 0.80));
+    } else if (kind === "king") {
+      g.add(part(new THREE.BoxGeometry(0.07, 0.24, 0.07), mat, 1.02));
+      g.add(part(new THREE.BoxGeometry(0.2, 0.07, 0.07), mat, 1.0));
     }
     return g;
   }
@@ -187,7 +207,7 @@ function init() {
       const color = key.indexOf("white") === 0 ? "white" : "black";
       let p = pieces[key];
       if (!p) {
-        const grp = buildPiece(type, mats[color]);
+        const grp = buildPiece(type, mats[color], color);
         grp.userData.type = type;
         const w = pos(sq.x, sq.y);
         grp.position.copy(w);
@@ -197,7 +217,7 @@ function init() {
       } else if (p.group.userData.type !== type) {
         // promotion: rebuild with the new type
         scene.remove(p.group);
-        const grp = buildPiece(type, mats[color]);
+        const grp = buildPiece(type, mats[color], color);
         grp.userData.type = type;
         grp.position.copy(pos(sq.x, sq.y));
         scene.add(grp);

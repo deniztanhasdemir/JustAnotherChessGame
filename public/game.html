@@ -127,7 +127,18 @@
       </div>
 
       <div class="actions">
-        <button id="resignBtn" class="btn btn-danger btn-block" type="button" disabled>Resign</button>
+        <div class="actions-row">
+          <button id="drawBtn" class="btn" type="button" disabled>Offer draw</button>
+          <button id="resignBtn" class="btn btn-danger" type="button" disabled>Resign</button>
+        </div>
+        <div class="emote-bar" id="emoteBar" aria-label="Emotes">
+          <button class="emote" data-e="gg" type="button">GG</button>
+          <button class="emote" data-e="nice" type="button">Nice</button>
+          <button class="emote" data-e="oops" type="button">Oops</button>
+          <button class="emote" data-e="wow" type="button">Wow</button>
+          <button class="emote" data-e="hi" type="button">Hi</button>
+          <button class="emote" data-e="gl" type="button">GL</button>
+        </div>
         <div class="actions-row">
           <button id="soundBtn" class="btn" type="button" title="Toggle sound">&#128266; Sound</button>
           <a href="/" class="btn">Leave</a>
@@ -147,10 +158,20 @@
       </div>
       <div id="ovActions" class="ov-actions" hidden>
         <button id="rematchBtn" class="btn btn-primary btn-block" type="button">Rematch</button>
+        <button id="newGameBtn" class="btn btn-block" type="button">New opponent</button>
         <a href="/" class="btn btn-block">Back to lobby</a>
       </div>
     </div>
   </div>
+
+  <div id="drawPrompt" class="draw-prompt panel" hidden>
+    <span id="drawPromptText">Your opponent offers a draw</span>
+    <div class="draw-prompt-btns">
+      <button id="drawAccept" class="btn btn-primary" type="button">Accept</button>
+      <button id="drawDecline" class="btn" type="button">Decline</button>
+    </div>
+  </div>
+  <div id="emoteToast" class="emote-toast" aria-live="polite"></div>
 
   <span id="dummy" class="visually-hidden"></span>
 

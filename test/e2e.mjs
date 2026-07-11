@@ -30,7 +30,7 @@ function conn(code, name) {
     send: (o) => ws.send(JSON.stringify(o)), close: () => ws.close(),
   };
 }
-const untilType = async (c, t) => { for (let i = 0; i < 6; i++) { const m = await c.next(); if (m.t === t) return m; } throw new Error("no " + t); };
+const untilType = async (c, t) => { for (let i = 0; i < 12; i++) { const m = await c.next(); if (m.t === t) return m; } throw new Error("no " + t); };
 
 log("\n== HTTP API ==");
 const nc = await (await fetch(BASE + "/api/newcode")).json();
@@ -55,9 +55,13 @@ alice.send({ t: "move", kind: "move", piece: "whitePawn1", from: "1_2", to: "1_4
 const mv = await untilType(bob, "move");
 ok(mv.piece === "whitePawn1" && mv.to === "1_4", "opponent receives the move");
 
-log("\n== Full room rejected ==");
+log("\n== Third player spectates + emotes ==");
 const carol = conn(code, "Carol"); await carol.open();
-ok(!!(await untilType(carol, "full")), "third player gets 'full'");
+ok((await untilType(carol, "assigned")).side === 2, "third player becomes a spectator (side 2)");
+alice.send({ t: "emote", e: "gg" });
+const em = await untilType(carol, "emote");
+ok(em.e === "gg" && em.from === 0, "spectator receives emotes");
+carol.close();
 
 log("\n== Resign / rematch / leave ==");
 bob.send({ t: "resign" });
@@ -70,6 +74,17 @@ ok(rA.side === 1 && rB.side === 0, "colors swap on rematch");
 bob.close();
 ok(!!(await untilType(alice, "opponent_disconnected")), "remaining player sees the opponent drop (grace window)");
 alice.close();
+
+log("\n== Draw by agreement ==");
+const dc = (await (await fetch(BASE + "/api/newcode")).json()).code;
+const dw = conn(dc, "Dw"); await dw.open(); await untilType(dw, "assigned"); await untilType(dw, "waiting");
+const db = conn(dc, "Db"); await db.open(); await untilType(db, "assigned"); await untilType(dw, "ready");
+dw.send({ t: "draw_offer" });
+ok((await untilType(db, "draw_offer")).from === 0, "opponent receives the draw offer");
+db.send({ t: "draw_accept" });
+const dgo = await untilType(dw, "gameover");
+ok(dgo.reason === "draw" && dgo.winner === -1, "draw agreed → gameover winner -1");
+dw.close(); db.close();
 
 log(`\n==== RESULT: ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);

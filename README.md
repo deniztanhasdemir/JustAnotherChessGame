@@ -18,8 +18,9 @@ The board renders in **3D** (Three.js) by default — orbit/zoom with the mouse,
 hit the **2D/3D** toggle for a flat board. Pick a time control (unlimited, 3 / 5 /
 10 min) in the lobby. Along the way you get per-player chess clocks, a live
 connection indicator, last-move and in-check highlighting, board coordinates, a
-SAN move list with Copy-PGN, captured pieces, sound effects, resign, and rematch
-(with colors swapped). If you refresh or drop briefly, the game holds for ~20s and
+SAN move list with Copy-PGN, captured pieces, sound effects, resign, rematch (with
+colors swapped), draw offers, quick emotes, and a "new opponent" button. Anyone
+with the game link can watch as a spectator. If you refresh or drop briefly, the game holds for ~20s and
 restores your board and clock when you're back.
 
 > The live URL is in the Cloudflare dashboard under

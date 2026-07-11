@@ -117,6 +117,7 @@ export class GameRoom {
     this.moves = [];
     this.names = { 0: "White", 1: "Black" };
     this.rematch = new Set();
+    this.drawOffer = null;     // role that offered a draw (transient)
     this.tc = null;            // base seconds; 0 = unlimited; null = not chosen yet
     this.spent = { 0: 0, 1: 0 }; // ms consumed per side
     this.active = 0;          // whose clock is running
@@ -169,8 +170,21 @@ export class GameRoom {
     }
 
     if (hasWhite && hasBlack) {
-      this.#send(server, { t: "full" });
-      server.close(1000, "full");
+      // both seats taken -> join as a spectator (capped)
+      let specs = 0;
+      for (const s of this.ctx.getWebSockets()) { const a = s.deserializeAttachment(); if (a && a.role === 2) specs++; }
+      if (specs >= 20) {
+        this.#send(server, { t: "full" });
+        server.close(1000, "full");
+        return new Response(null, { status: 101, webSocket: client });
+      }
+      server.serializeAttachment({ role: 2, name });
+      this.#send(server, { t: "assigned", side: 2, name });
+      if (this.started && !this.over) {
+        this.#send(server, this.#msg("resume", { side: 2, white: this.names[0], black: this.names[1], moves: this.moves }));
+      } else {
+        this.#send(server, this.#msg("waiting", {}));
+      }
       return new Response(null, { status: 101, webSocket: client });
     }
 
@@ -219,10 +233,14 @@ export class GameRoom {
     const a = ws.deserializeAttachment();
     if (!a) return;
 
+    if (m.t === "emote") { this.#emote(a.role, m.e); return; }
+    if (a.role === 2) return; // spectators can watch + emote, not act
+
     switch (m.t) {
       case "move":
         if (this.over || !validMove(m)) return;
         this.moves.push({ kind: m.kind, piece: m.piece, from: m.from, to: m.to });
+        this.drawOffer = null; // a move declines any pending draw
         this.#relay(ws, { t: "move", kind: m.kind, piece: m.piece, from: m.from, to: m.to });
         this.#tickClock(a.role);
         this.#persist();
@@ -239,7 +257,24 @@ export class GameRoom {
       case "rematch":
         this.#requestRematch(a.role);
         break;
+      case "draw_offer":
+        this.drawOffer = a.role;
+        this.#relay(ws, { t: "draw_offer", from: a.role });
+        break;
+      case "draw_accept":
+        if (this.drawOffer === 1 - a.role) { this.drawOffer = null; this.#gameover("draw", -1); }
+        break;
+      case "draw_decline":
+        this.drawOffer = null;
+        this.#relay(ws, { t: "draw_decline" });
+        break;
     }
+  }
+
+  #emote(role, e) {
+    const EMOTES = ["gg", "nice", "oops", "wow", "hi", "gl"];
+    if (!EMOTES.includes(e)) return;
+    this.#broadcast({ t: "emote", e, from: role });
   }
 
   async webSocketClose(ws) {
@@ -271,6 +306,7 @@ export class GameRoom {
   #handleLeave(ws) {
     const a = ws.deserializeAttachment();
     if (!a) return;
+    if (a.role === 2) return; // a spectator leaving doesn't affect the game
     this.rematch.delete(a.role);
     if (this.over) {
       this.#broadcast({ t: "opponent_gone" });

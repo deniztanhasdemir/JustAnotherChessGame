@@ -180,6 +180,41 @@
 .actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 #soundBtn.muted { opacity: .55; }
 
+/* emote bar */
+.emote-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.emote {
+  font-family: var(--font-ui); font-weight: 700; font-size: 12px; letter-spacing: .04em;
+  color: var(--muted); background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 8px;
+  padding: 7px 4px; cursor: pointer; transition: border-color .15s, color .15s;
+}
+.emote:hover { border-color: var(--pink); color: var(--text); }
+
+.emote-toast {
+  position: fixed; top: 74px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 8px; align-items: center; z-index: 90; pointer-events: none;
+}
+.emote-bubble {
+  font-family: var(--font-ui); font-weight: 700; font-size: 15px; color: var(--text);
+  background: var(--panel); border: 1px solid var(--pink); border-radius: 999px; padding: 8px 16px;
+  box-shadow: var(--glow-s); white-space: nowrap;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .emote-bubble { animation: bubbleIn .25s ease both; }
+  .emote-bubble.out { animation: bubbleOut .3s ease forwards; }
+  @keyframes bubbleIn { from { opacity: 0; transform: translateY(8px) scale(.9); } }
+  @keyframes bubbleOut { to { opacity: 0; transform: translateY(-8px); } }
+}
+
+/* draw offer prompt */
+.draw-prompt {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 95;
+  display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .5);
+}
+.draw-prompt span { font-size: 14px; }
+.draw-prompt-btns { display: flex; gap: 8px; }
+.draw-prompt .btn { padding: 8px 16px; }
+
 /* overlay */
 .overlay {
   position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;

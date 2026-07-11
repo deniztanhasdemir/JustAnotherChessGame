@@ -12,7 +12,9 @@
     oppName: $("oppName"), oppSide: $("oppSide"), oppTray: $("oppTray"), oppClock: $("oppClock"),
     youName: $("youName"), youSide: $("youSide"), youTray: $("youTray"), youClock: $("youClock"),
     moveList: $("moveList"), impossible: $("impossibleCounter"), copyPgn: $("copyPgn"),
-    resign: $("resignBtn"), sound: $("soundBtn"),
+    resign: $("resignBtn"), sound: $("soundBtn"), draw: $("drawBtn"), newGame: $("newGameBtn"),
+    emoteBar: $("emoteBar"), emoteToast: $("emoteToast"),
+    drawPrompt: $("drawPrompt"), drawAccept: $("drawAccept"), drawDecline: $("drawDecline"),
     overlay: $("overlay"), ovTitle: $("ovTitle"), ovMsg: $("ovMsg"),
     ovInvite: $("ovInvite"), ovCode: $("ovCode"), ovCopy: $("ovCopy"),
     ovActions: $("ovActions"), rematch: $("rematchBtn"),
@@ -26,6 +28,7 @@
   var started = false;
   var over = false;
   var rejected = false;
+  var spectator = false;
   var reconnecting = false;
   var attempts = 0;
   var MAX_ATTEMPTS = 6;
@@ -59,6 +62,12 @@
   // ---- turn banner ----
   function turnChanged() {
     if (over || !started) return;
+    if (spectator) {
+      var t = window.main && window.main.variables.turn;
+      els.turn.className = "turn-banner";
+      els.turn.textContent = (t === "b" ? "Black" : "White") + " to move";
+      return;
+    }
     if (window.canPlay) { els.turn.className = "turn-banner you"; els.turn.textContent = "Your move"; }
     else { els.turn.className = "turn-banner opp"; els.turn.textContent = "Opponent's move"; }
   }
@@ -100,7 +109,8 @@
     sanMoves.push(toSan(mover, from, to, capture));
     renderMoves();
     if (capture && pieces && pieces[victimKey]) {
-      var tray = (white ? 0 : 1) === mySide ? els.youTray : els.oppTray;
+      var moverSide = white ? 0 : 1;
+      var tray = (spectator ? moverSide === 0 : moverSide === mySide) ? els.youTray : els.oppTray;
       var span = document.createElement("span");
       span.innerHTML = pieces[victimKey].img; // static piece glyph entity
       tray.appendChild(span);
@@ -130,6 +140,7 @@
     els.ovInvite.hidden = !o.invite;
     els.ovActions.hidden = !o.actions;
     els.rematch.style.display = o.actions && o.rematch !== false ? "" : "none";
+    if (els.newGame) { els.newGame.disabled = false; els.newGame.textContent = "New opponent"; }
     els.overlay.hidden = false;
   }
   function hideOverlay() { els.overlay.hidden = true; }
@@ -150,10 +161,17 @@
   function sideChip(el, side) { el.textContent = side === 0 ? "White" : "Black"; el.className = "pc-side " + (side === 0 ? "w" : "b"); }
   function setCards(whiteName, blackName) {
     whiteNameG = whiteName; blackNameG = blackName;
-    els.youName.textContent = (mySide === 0 ? whiteName : blackName) + " (you)";
-    els.oppName.textContent = mySide === 0 ? blackName : whiteName;
-    sideChip(els.youSide, mySide);
-    sideChip(els.oppSide, 1 - mySide);
+    if (spectator) {
+      els.youName.textContent = whiteName;
+      els.oppName.textContent = blackName;
+      sideChip(els.youSide, 0);
+      sideChip(els.oppSide, 1);
+    } else {
+      els.youName.textContent = (mySide === 0 ? whiteName : blackName) + " (you)";
+      els.oppName.textContent = mySide === 0 ? blackName : whiteName;
+      sideChip(els.youSide, mySide);
+      sideChip(els.oppSide, 1 - mySide);
+    }
   }
   function applyFlip() {
     var flipped = mySide === 1;
@@ -187,7 +205,7 @@
   }
   function renderClocks() {
     for (var side = 0; side < 2; side++) {
-      var el = side === mySide ? els.youClock : els.oppClock;
+      var el = (spectator ? side === 0 : side === mySide) ? els.youClock : els.oppClock;
       if (!el) continue;
       var spent = liveSpent(side);
       var timed = clock.tc > 0;
@@ -218,7 +236,8 @@
     window.Engine.reset(mySide);
     onClock(m);
     turnChanged();
-    els.resign.disabled = false; resetResign();
+    if (!spectator) { els.resign.disabled = false; els.draw.disabled = false; els.draw.textContent = "Offer draw"; }
+    els.drawPrompt.hidden = true; resetResign();
     setConn("on", "Live");
     if (window.Sfx) Sfx.start();
   }
@@ -235,7 +254,8 @@
     });
     onClock(msg);
     turnChanged();
-    els.resign.disabled = false; resetResign();
+    if (!spectator) { els.resign.disabled = false; els.draw.disabled = false; els.draw.textContent = "Offer draw"; }
+    els.drawPrompt.hidden = true; resetResign();
     setConn("on", "Live");
   }
 
@@ -267,6 +287,58 @@
     send({ t: "rematch" });
     els.rematch.disabled = true;
     els.rematch.textContent = "Waiting for opponent…";
+  });
+
+  // ---- spectator / draw / emotes / new opponent ----
+  function enterSpectator() {
+    spectator = true;
+    document.body.classList.add("spectating");
+    els.resign.style.display = "none";
+    els.draw.style.display = "none";
+  }
+  function showToast(text) {
+    var d = document.createElement("div");
+    d.className = "emote-bubble";
+    d.textContent = text;
+    els.emoteToast.appendChild(d);
+    setTimeout(function () { d.classList.add("out"); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 320); }, 2400);
+  }
+  var EMOTE_LABELS = { gg: "GG 👏", nice: "Nice! 👍", oops: "Oops 😅", wow: "Wow 😮", hi: "Hi 👋", gl: "GL 🤝" };
+  function showEmote(e, from) {
+    var name = from === 0 ? whiteNameG : from === 1 ? blackNameG : "";
+    showToast((name ? name + ": " : "") + (EMOTE_LABELS[e] || e));
+  }
+  function reasonText(reason, winner) {
+    if (reason === "checkmate") return "Checkmate.";
+    if (reason === "resign") return (winner === 0 ? blackNameG : whiteNameG) + " resigned.";
+    if (reason === "time") return (winner === 0 ? blackNameG : whiteNameG) + " ran out of time.";
+    if (reason === "impossible") return "Three illegal moves.";
+    return "";
+  }
+  function endDraw() {
+    over = true; started = false;
+    stopClockLocal(); window.Engine.stop();
+    els.resign.disabled = true; els.draw.disabled = true; els.drawPrompt.hidden = true; resetResign();
+    resultG = "1/2-1/2";
+    els.turn.className = "turn-banner"; els.turn.textContent = "Draw";
+    if (window.Sfx) Sfx.low();
+    showOverlay({ title: "Draw", msg: "Draw by agreement.", actions: true, rematch: spectator ? false : true });
+  }
+  els.draw.addEventListener("click", function () {
+    if (over || !started || spectator) return;
+    send({ t: "draw_offer" });
+    els.draw.disabled = true; els.draw.textContent = "Draw offered";
+  });
+  els.drawAccept.addEventListener("click", function () { send({ t: "draw_accept" }); els.drawPrompt.hidden = true; });
+  els.drawDecline.addEventListener("click", function () { send({ t: "draw_decline" }); els.drawPrompt.hidden = true; });
+  els.emoteBar.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest(".emote") : null;
+    if (b) send({ t: "emote", e: b.getAttribute("data-e") });
+  });
+  els.newGame.addEventListener("click", function () {
+    els.newGame.disabled = true; els.newGame.textContent = "Finding…";
+    fetch("/api/quickmatch").then(function (r) { return r.json(); }).then(function (d) { location.href = "/game/" + d.code; })
+      .catch(function () { els.newGame.disabled = false; els.newGame.textContent = "New opponent"; });
   });
 
   function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
@@ -302,8 +374,8 @@
     switch (m.t) {
       case "assigned":
         mySide = m.side;
-        els.youName.textContent = myName + " (you)";
-        sideChip(els.youSide, mySide);
+        if (mySide === 2) enterSpectator();
+        else { els.youName.textContent = myName + " (you)"; sideChip(els.youSide, mySide); }
         applyFlip();
         break;
       case "waiting":
@@ -329,7 +401,18 @@
         onClock(m);
         break;
       case "gameover":
-        endGame(m.reason, m.winner === mySide, m.winner);
+        if (m.winner === -1) endDraw(m.reason);
+        else endGame(m.reason, m.winner === mySide, m.winner);
+        break;
+      case "draw_offer":
+        if (!over && !spectator) els.drawPrompt.hidden = false;
+        break;
+      case "draw_decline":
+        showToast("Draw declined");
+        els.draw.disabled = false; els.draw.textContent = "Offer draw";
+        break;
+      case "emote":
+        showEmote(m.e, m.from);
         break;
       case "opponent_disconnected":
         if (over) break;
@@ -345,9 +428,15 @@
         if (over) break;
         over = true; started = false;
         stopClockLocal(); window.Engine.stop();
+        els.resign.disabled = true; els.draw.disabled = true; els.drawPrompt.hidden = true;
+        if (spectator) {
+          els.turn.className = "turn-banner"; els.turn.textContent = "Game over";
+          showOverlay({ title: "Game over", msg: "A player left the game.", actions: true, rematch: false });
+          setConn("off", "Ended");
+          break;
+        }
         resultG = mySide === 0 ? "1-0" : "0-1";
         els.turn.className = "turn-banner win"; els.turn.textContent = "You win";
-        els.resign.disabled = true;
         if (window.Sfx) Sfx.win();
         showOverlay({ title: "You win!", result: "win", msg: "Your opponent left the game.", actions: true, rematch: false });
         setConn("off", "Opponent left");
@@ -375,8 +464,14 @@
   function endGame(reason, iWon, winner) {
     over = true; started = false;
     stopClockLocal(); window.Engine.stop();
-    els.resign.disabled = true; resetResign();
+    els.resign.disabled = true; els.draw.disabled = true; els.drawPrompt.hidden = true; resetResign();
     resultG = winner === 0 ? "1-0" : "0-1";
+    if (spectator) {
+      var wn = winner === 0 ? whiteNameG : blackNameG;
+      els.turn.className = "turn-banner"; els.turn.textContent = wn + " wins";
+      showOverlay({ title: wn + " wins", msg: reasonText(reason, winner), actions: true, rematch: false });
+      return;
+    }
     els.turn.className = "turn-banner " + (iWon ? "win" : "lose");
     els.turn.textContent = iWon ? "You win" : "You lose";
     var msg = "";
